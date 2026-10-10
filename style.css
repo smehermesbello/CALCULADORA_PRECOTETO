@@ -45,13 +45,39 @@ body {
     font-size: 1rem;
 }
 
+.global-actions {
+    margin-top: 1.25rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.btn-action, .upload-label {
+    background-color: rgba(34, 211, 238, 0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-action:hover, .upload-label:hover {
+    background-color: rgba(34, 211, 238, 0.25);
+}
+
 .container {
-    max-width: 1100px;
+    max-width: 1150px;
     margin: 0 auto;
     padding: 0 1rem;
 }
 
-/* Menu de Abas com Underline Animado */
+/* Abas */
 .tabs-nav {
     display: flex;
     flex-wrap: wrap;
@@ -68,9 +94,9 @@ body {
     background: transparent;
     border: none;
     color: var(--text-muted);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    padding: 0.75rem 1.25rem;
+    padding: 0.75rem 1rem;
     cursor: pointer;
     border-radius: 8px;
     transition: all 0.3s ease;
@@ -99,7 +125,6 @@ body {
     border-radius: 2px;
 }
 
-/* Transição de Abas (Fade-in) */
 .tab-content {
     display: none;
     opacity: 0;
@@ -138,7 +163,30 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* Grid de Formulários */
+.scale-toggle-box {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: var(--text-main);
+}
+
+.checkbox-label input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+}
+
+/* Form Grid */
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -182,7 +230,43 @@ body {
     min-height: 1.2rem;
 }
 
-/* Seção de DPA Dinâmico */
+/* Consolidated Results Grid (Visão Todos) */
+.consolidated-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+}
+
+.sub-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+}
+
+.sub-card h3 {
+    font-size: 0.95rem;
+    color: var(--accent);
+}
+
+.sub-card p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.sub-card strong {
+    color: var(--text-main);
+    font-size: 1rem;
+}
+
+/* DPA Dinâmico */
 .dpa-section {
     margin-bottom: 1.5rem;
     border-top: 1px solid var(--border);
@@ -238,11 +322,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s;
-}
-
-.btn-remove-dpa:hover {
-    background: rgba(239, 68, 68, 0.4);
 }
 
 .btn-secondary {
@@ -261,7 +340,7 @@ body {
     background-color: rgba(34, 211, 238, 0.1);
 }
 
-/* Área de Resultados */
+/* Resultados */
 .results-box {
     background-color: rgba(15, 23, 42, 0.6);
     border: 1px solid var(--border);
@@ -276,7 +355,6 @@ body {
 .results-box h3 {
     font-size: 1.1rem;
     color: var(--text-main);
-    margin-bottom: 0.25rem;
     border-bottom: 1px solid var(--border);
     padding-bottom: 0.5rem;
 }
@@ -297,7 +375,7 @@ body {
     font-size: 1.1rem;
 }
 
-/* Badges Semânticos */
+/* Badges */
 .badge {
     display: inline-block;
     padding: 0.5rem 1rem;
@@ -308,29 +386,10 @@ body {
     margin-top: 0.5rem;
 }
 
-.badge.success {
-    background-color: rgba(16, 185, 129, 0.2);
-    color: var(--success);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.badge.info {
-    background-color: rgba(34, 211, 238, 0.2);
-    color: var(--accent);
-    border: 1px solid rgba(34, 211, 238, 0.3);
-}
-
-.badge.warning {
-    background-color: rgba(245, 158, 11, 0.2);
-    color: var(--warning);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.badge.danger {
-    background-color: rgba(239, 68, 68, 0.2);
-    color: var(--danger);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-}
+.badge.success { background-color: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge.info { background-color: rgba(34, 211, 238, 0.2); color: var(--accent); border: 1px solid rgba(34, 211, 238, 0.3); }
+.badge.warning { background-color: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge.danger { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
 
 /* Pirâmide de DY */
 .pyramid-container {
@@ -343,9 +402,15 @@ body {
 }
 
 .pyramid-container h4 {
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     font-size: 1rem;
+    color: var(--text-main);
+}
+
+.pyramid-desc {
+    font-size: 0.85rem;
     color: var(--text-muted);
+    margin-bottom: 1rem;
 }
 
 .pyramid {
@@ -366,18 +431,15 @@ body {
     font-weight: 700;
     color: #fff;
     border-radius: 4px;
-    transition: all 0.3s;
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
-/* Níveis da pirâmide (Base verde 6% até Topo vermelho 15%) */
 .level-6 { width: 100%; background-color: #10b981; }
 .level-8 { width: 85%; background-color: #34d399; }
 .level-10 { width: 70%; background-color: #f59e0b; }
 .level-12 { width: 55%; background-color: #f97316; }
 .level-15 { width: 40%; background-color: #ef4444; }
 
-/* Aviso e Passo a Passo */
 .warning-box {
     background-color: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.3);
@@ -399,7 +461,7 @@ body {
     margin-top: 0.5rem;
 }
 
-/* Tabela de Projeção */
+/* Tabela */
 .table-container {
     margin-top: 2rem;
 }
@@ -435,13 +497,8 @@ th {
     font-weight: 600;
 }
 
-tbody tr:nth-child(even) {
-    background-color: rgba(30, 41, 59, 0.5);
-}
-
-tbody tr:hover {
-    background-color: rgba(34, 211, 238, 0.05);
-}
+tbody tr:nth-child(even) { background-color: rgba(30, 41, 59, 0.5); }
+tbody tr:hover { background-color: rgba(34, 211, 238, 0.05); }
 
 .footer {
     text-align: center;
@@ -451,14 +508,7 @@ tbody tr:hover {
 }
 
 @media (max-width: 768px) {
-    .tabs-nav {
-        flex-direction: column;
-    }
-    .tab-btn {
-        width: 100%;
-        text-align: left;
-    }
-    .tab-btn.active::after {
-        display: none;
-    }
+    .tabs-nav { flex-direction: column; }
+    .tab-btn { width: 100%; text-align: left; }
+    .tab-btn.active::after { display: none; }
 }
