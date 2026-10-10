@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valuation Automatizado - Método Bazin</title>
     <link rel="stylesheet" href="style.css">
-    <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <header class="header">
         <div class="container">
             <h1><i class="fa-solid fa-chart-line"></i> Valuation Bazin Pro</h1>
-            <p>Automatize seus cálculos de Preço Teto baseados na clássica metodologia de Décio Bazin</p>
+            <p>Automatize seus cálculos de Preço Teto baseados na metodologia de Décio Bazin</p>
         </div>
     </header>
 
@@ -31,7 +30,7 @@
         <section id="historico" class="tab-content active">
             <div class="card">
                 <h2>Valuation por Histórico de Dividendos</h2>
-                <p class="subtitle">Insira o ticker e o DPA médio para calcular os preços teto conforme as exigências de retorno de Bazin.</p>
+                <p class="subtitle">Insira o ticker e o DPA médio para calcular os preços teto.</p>
                 
                 <form id="form-historico" class="form-grid">
                     <div class="input-group">
@@ -41,7 +40,7 @@
                     
                     <div class="input-group">
                         <label for="dpa-medio"><i class="fa-solid fa-coins"></i> DPA Médio Anual (R$)</label>
-                        <input type="number" step="0.0001" id="dpa-medio" placeholder="Ex: 2.50 (Média últimos 3 ou 5 anos)" required>
+                        <input type="text" id="dpa-medio" placeholder="Ex: 2,50 ou 2.50" required>
                     </div>
 
                     <div class="form-actions">
@@ -96,27 +95,29 @@
         <section id="projetivo" class="tab-content">
             <div class="card">
                 <h2>Valuation por Lucro Projetivo e Payout</h2>
-                <p class="subtitle">Insira as projeções da empresa para projetar o LPA, DPA e calcular os tetos de compra.</p>
+                <p class="subtitle">Insira dados em bilhões (ex: 110,3 para 110,3 bilhões) para conversão automática.</p>
                 
                 <form id="form-projetivo" class="form-grid">
                     <div class="input-group">
                         <label for="ticker-proj"><i class="fa-solid fa-tag"></i> Ticker da Ação</label>
-                        <input type="text" id="ticker-proj" placeholder="Ex: ITUB4, B3SA3" required>
+                        <input type="text" id="ticker-proj" placeholder="Ex: ITUB4, PETR4" required>
                     </div>
 
                     <div class="input-group">
-                        <label for="lucro-proj"><i class="fa-solid fa-chart-pie"></i> Lucro Projetivo Anual (R$)</label>
-                        <input type="number" step="0.01" id="lucro-proj" placeholder="Ex: 5000000000 (5 Bilhões)" required>
+                        <label for="lucro-proj"><i class="fa-solid fa-chart-pie"></i> Lucro Projetivo (R$ em Bilhões)</label>
+                        <input type="text" id="lucro-proj" placeholder="Ex: 35,5 (R$ 35,5 Bi)" required>
+                        <small id="extenso-lucro" class="conversion-hint">Valor por extenso: --</small>
                     </div>
 
                     <div class="input-group">
-                        <label for="n-papeis"><i class="fa-solid fa-layer-group"></i> Nº de Papéis (Ações Totais)</label>
-                        <input type="number" step="1" id="n-papeis" placeholder="Ex: 1000000000 (1 Bilhão)" required>
+                        <label for="n-papeis"><i class="fa-solid fa-layer-group"></i> Nº de Papéis (Em Bilhões)</label>
+                        <input type="text" id="n-papeis" placeholder="Ex: 9,8 (9,8 Bilhões de ações)" required>
+                        <small id="extenso-papeis" class="conversion-hint">Valor por extenso: --</small>
                     </div>
 
                     <div class="input-group">
                         <label for="payout"><i class="fa-solid fa-percent"></i> Payout Esperado (%)</label>
-                        <input type="number" step="0.1" id="payout" placeholder="Ex: 50 (para 50% de distribuição)" required>
+                        <input type="text" id="payout" placeholder="Ex: 50" required>
                     </div>
 
                     <div class="form-actions">
@@ -170,7 +171,7 @@
     </main>
 
     <footer class="footer">
-        <p>&copy; 2026 Valuation Bazin Pro. Cotações simuladas via Web Scraping / API pública integrável com Investidor10.</p>
+        <p>&copy; 2026 Valuation Bazin Pro. Cotações integradas via módulo de mercado.</p>
     </footer>
 
     <script src="script.js"></script>
