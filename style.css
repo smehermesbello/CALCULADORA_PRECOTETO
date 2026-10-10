@@ -104,7 +104,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 25px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     margin-bottom: 25px;
 }
 
@@ -128,7 +128,7 @@ body {
 .input-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .input-group label {
@@ -153,6 +153,12 @@ body {
 
 .input-group input:focus {
     border-color: var(--primary);
+}
+
+.conversion-hint {
+    font-size: 0.78rem;
+    color: #38bdf8;
+    margin-top: 2px;
 }
 
 .form-actions {
@@ -254,7 +260,7 @@ body {
     border: 1px solid var(--danger);
 }
 
-/* PIRÂMIDE BAZIN (6% na base, 15% no topo) */
+/* PIRÂMIDE BAZIN */
 .pyramid-wrapper {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -297,7 +303,6 @@ body {
     transform: scale(1.02);
 }
 
-/* Formato de Pirâmide (Topo menor, Base maior) */
 .level-15 { width: 50%; background-color: #7c2d12; color: #ffedd5; border: 1px solid #ea580c; }
 .level-12 { width: 62%; background-color: #9a3412; color: #ffedd5; border: 1px solid #f97316; }
 .level-10 { width: 74%; background-color: #b45309; color: #fef3c7; border: 1px solid #f59e0b; }
