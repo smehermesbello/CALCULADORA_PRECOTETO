@@ -1,415 +1,464 @@
-// ========== UTILITÁRIOS ==========
-const numberFormat = () => document.getElementById('numberFormat').value;
-
-function parseNumber(str) {
-  if (!str || str.trim() === '') return null;
-  str = str.toString().trim().replace(/\s/g, '');
-  if (numberFormat() === 'comma') {
-    // 10,3 → 10.3 bilhões
-    const n = parseFloat(str.replace(',', '.'));
-    if (isNaN(n)) return null;
-    return n * 1_000_000_000;
-  }
-  // números completos (pode ter ponto ou vírgula como milhar)
-  str = str.replace(/\./g, '').replace(',', '.');
-  const n = parseFloat(str);
-  return isNaN(n) ? null : n;
+:root {
+    --bg-main: #0f172a;
+    --card-bg: #1e293b;
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #22d3ee;
+    --accent-hover: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --border: #334155;
+    --input-bg: #0f172a;
 }
 
-function formatNumber(n, isMoney = true) {
-  if (n === null || n === undefined || isNaN(n)) return '—';
-  if (numberFormat() === 'comma' && Math.abs(n) >= 1e9) {
-    return (n / 1e9).toFixed(2).replace('.', ',') + ' bi';
-  }
-  return n.toLocaleString('pt-BR', {
-    minimumFractionDigits: isMoney ? 2 : 0,
-    maximumFractionDigits: isMoney ? 2 : 4
-  });
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-function openInvestidor10(inputId) {
-  const ticker = document.getElementById(inputId).value.trim().toUpperCase();
-  if (!ticker) {
-    alert('Digite o ticker primeiro');
-    return;
-  }
-  window.open(`https://investidor10.com.br/acoes/${ticker}/`, '_blank');
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    line-height: 1.6;
+    padding-bottom: 3rem;
 }
 
-// ========== DPA INPUTS DINÂMICOS (BAZIN) ==========
-function updateDpaInputs() {
-  const anos = parseInt(document.getElementById('bazin-anos').value);
-  const container = document.getElementById('bazin-dpa-inputs');
-  container.innerHTML = '';
-  for (let i = 1; i <= anos; i++) {
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.className = 'number';
-    inp.placeholder = `Ano ${i}`;
-    inp.id = `bazin-dpa-${i}`;
-    container.appendChild(inp);
-  }
-}
-document.getElementById('bazin-anos').addEventListener('change', updateDpaInputs);
-updateDpaInputs();
-
-// ========== MÉTODO ATIVO ==========
-function showMethod(method) {
-  document.querySelectorAll('.method').forEach(m => m.classList.remove('active'));
-  if (method === 'all') {
-    document.querySelectorAll('.method').forEach(m => m.classList.add('active'));
-  } else {
-    const el = document.getElementById('method-' + method);
-    if (el) el.classList.add('active');
-  }
-}
-document.getElementById('methodSelect').addEventListener('change', e => showMethod(e.target.value));
-showMethod('all');
-
-// ========== CÁLCULOS ==========
-function calcBazin() {
-  const ticker = document.getElementById('bazin-ticker').value.trim().toUpperCase();
-  const cotacao = parseNumber(document.getElementById('bazin-cotacao').value);
-  const dyMedio = parseNumber(document.getElementById('bazin-dy').value); // em %
-  const anos = parseInt(document.getElementById('bazin-anos').value);
-
-  let dpas = [];
-  for (let i = 1; i <= anos; i++) {
-    const v = parseNumber(document.getElementById(`bazin-dpa-${i}`)?.value);
-    if (v !== null) dpas.push(v);
-  }
-
-  let dpaMedio;
-  if (dpas.length > 0) {
-    dpaMedio = dpas.reduce((a, b) => a + b, 0) / dpas.length;
-  } else if (cotacao && dyMedio) {
-    dpaMedio = cotacao * (dyMedio / 100);
-  } else {
-    document.getElementById('bazin-results').innerHTML = '<p style="color:#fbbf24">Preencha DY Médio + Cotação ou os valores de DPA anuais.</p>';
-    return;
-  }
-
-  const yields = [0.06, 0.08, 0.10, 0.12, 0.15];
-  const precos = yields.map(y => dpaMedio / y);
-
-  let html = `
-    <h3>Resultados Bazin – ${ticker || 'Ação'}</h3>
-    <table>
-      <tr><th>DPA Médio</th><td>R$ ${formatNumber(dpaMedio)}</td></tr>
-      <tr><th>Cotação Atual</th><td>R$ ${formatNumber(cotacao)}</td></tr>
-      <tr><th>DY Médio Informado</th><td>${dyMedio ? dyMedio.toFixed(2) + '%' : '—'}</td></tr>
-    </table>
-    <h4 style="margin-top:1rem">Preços-Teto</h4>
-    <table>
-      ${yields.map((y, i) => `
-        <tr>
-          <th>${(y * 100).toFixed(0)}%</th>
-          <td>R$ ${formatNumber(precos[i])}</td>
-          <td>${cotacao ? (cotacao <= precos[i] ? '<span style="color:#22c55e">Abaixo do teto</span>' : '<span style="color:#ef4444">Acima do teto</span>') : ''}</td>
-        </tr>
-      `).join('')}
-    </table>
-  `;
-  document.getElementById('bazin-results').innerHTML = html;
-
-  // Pirâmide
-  const labels = ['6% (base)', '8%', '10%', '12%', '15% (topo)'];
-  const classes = ['base', 'mid', 'mid', 'mid', 'top'];
-  document.getElementById('bazin-pyramid').innerHTML = yields.map((y, i) => `
-    <div class="pyramid-level ${classes[i]}">
-      ${labels[i]} → R$ ${formatNumber(precos[i])}
-    </div>
-  `).join('');
+.header {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
 }
 
-function calcDY() {
-  const ticker = document.getElementById('dy-ticker').value.trim().toUpperCase();
-  const cotacao = parseNumber(document.getElementById('dy-cotacao').value);
-  const payout = parseNumber(document.getElementById('dy-payout').value); // %
-  const lucro = parseNumber(document.getElementById('dy-lucro').value);
-  const papeis = parseNumber(document.getElementById('dy-papeis').value);
-
-  if (!lucro || !papeis || !payout) {
-    document.getElementById('dy-results').innerHTML = '<p style="color:#fbbf24">Preencha Lucro Projetivo, Nº de Papéis e Payout.</p>';
-    return;
-  }
-
-  const lpa = lucro / papeis;
-  const dpa = lpa * (payout / 100);
-  const yields = [0.06, 0.08, 0.10, 0.12, 0.15];
-  const precos = yields.map(y => dpa / y);
-
-  let html = `
-    <h3>Resultados DY Projetivo – ${ticker || 'Ação'}</h3>
-    <table>
-      <tr><th>LPA (Lucro por Ação)</th><td>R$ ${formatNumber(lpa)}</td></tr>
-      <tr><th>DPA (Dividendo por Ação)</th><td>R$ ${formatNumber(dpa)}</td></tr>
-      <tr><th>Payout</th><td>${payout.toFixed(1)}%</td></tr>
-      <tr><th>Cotação</th><td>R$ ${formatNumber(cotacao)}</td></tr>
-    </table>
-    <h4 style="margin-top:1rem">Preços-Teto</h4>
-    <table>
-      ${yields.map((y, i) => `
-        <tr>
-          <th>${(y * 100).toFixed(0)}%</th>
-          <td>R$ ${formatNumber(precos[i])}</td>
-          <td>${cotacao ? (cotacao <= precos[i] ? '<span style="color:#22c55e">OK</span>' : '<span style="color:#ef4444">Cara</span>') : ''}</td>
-        </tr>
-      `).join('')}
-    </table>
-  `;
-  document.getElementById('dy-results').innerHTML = html;
-
-  const labels = ['6% (base)', '8%', '10%', '12%', '15% (topo)'];
-  const classes = ['base', 'mid', 'mid', 'mid', 'top'];
-  document.getElementById('dy-pyramid').innerHTML = yields.map((y, i) => `
-    <div class="pyramid-level ${classes[i]}">${labels[i]} → R$ ${formatNumber(precos[i])}</div>
-  `).join('');
+.header h1 {
+    font-size: 2.25rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
 }
 
-function calcPEG() {
-  const pl = parseNumber(document.getElementById('peg-pl').value);
-  const payout = parseNumber(document.getElementById('peg-payout').value); // %
-  const roe = parseNumber(document.getElementById('peg-roe').value); // %
-  const psr = parseNumber(document.getElementById('peg-psr').value);
-
-  if (pl === null || payout === null || roe === null) {
-    document.getElementById('peg-results').innerHTML = '<p style="color:#fbbf24">Preencha P/L, Payout e ROE.</p>';
-    return;
-  }
-
-  // PEG = PL / (1 - payout) * ROE   (payout e roe em decimal)
-  const payoutDec = payout / 100;
-  const roeDec = roe / 100;
-  const peg = (pl / (1 - payoutDec)) * roeDec;
-
-  let interpretacao = '';
-  let cor = '';
-  if (peg < 1) { interpretacao = 'Muito barato'; cor = '#22c55e'; }
-  else if (peg <= 2) { interpretacao = 'Valor bom'; cor = '#38bdf8'; }
-  else if (peg <= 3) { interpretacao = 'Cara'; cor = '#fbbf24'; }
-  else { interpretacao = 'Sobrevalorizada'; cor = '#ef4444'; }
-
-  let extra = '';
-  if (psr !== null) {
-    extra = `<tr><th>PSR</th><td>${formatNumber(psr, false)} ${psr < 1 ? '<span style="color:#22c55e">(abaixo de 1 – interessante)</span>' : ''}</td></tr>`;
-  }
-
-  document.getElementById('peg-results').innerHTML = `
-    <h3>Resultado PEG Ratio</h3>
-    <table>
-      <tr><th>PEG Ratio</th><td style="font-size:1.3rem;font-weight:700;color:${cor}">${formatNumber(peg, false)}</td></tr>
-      <tr><th>Interpretação</th><td style="color:${cor}">${interpretacao}</td></tr>
-      ${extra}
-    </table>
-  `;
+.header p {
+    color: var(--text-muted);
+    font-size: 1rem;
 }
 
-function calcROE() {
-  const plInicio = parseNumber(document.getElementById('roe-pl-inicio').value);
-  const lucro = parseNumber(document.getElementById('roe-lucro').value);
-  const div = parseNumber(document.getElementById('roe-div').value);
-
-  if (plInicio === null || lucro === null || div === null) {
-    document.getElementById('roe-results').innerHTML = '<p style="color:#fbbf24">Preencha todos os campos obrigatórios.</p>';
-    return;
-  }
-
-  const plFinal = plInicio + lucro - div;
-  const plMedio = (plInicio + plFinal) / 2;
-  const roeProj = (lucro / plMedio) * 100;
-
-  document.getElementById('roe-results').innerHTML = `
-    <h3>ROE Projetivo</h3>
-    <table>
-      <tr><th>PL Final Projetado</th><td>R$ ${formatNumber(plFinal)}</td></tr>
-      <tr><th>PL Médio Projetado</th><td>R$ ${formatNumber(plMedio)}</td></tr>
-      <tr><th>ROE Projetivo</th><td style="font-size:1.2rem;color:#22c55e"><strong>${roeProj.toFixed(2)}%</strong></td></tr>
-    </table>
-  `;
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1rem;
 }
 
-function calcROEEq() {
-  const roe = parseNumber(document.getElementById('roeEq-roe').value); // %
-  const pvp = parseNumber(document.getElementById('roeEq-pvp').value);
-  const papeis = parseNumber(document.getElementById('roeEq-papeis').value);
-  const lucro = parseNumber(document.getElementById('roeEq-lucro').value);
-  const pl = parseNumber(document.getElementById('roeEq-pl').value);
-  const payout = parseNumber(document.getElementById('roeEq-payout').value); // %
-
-  if ([roe, pvp, papeis, lucro, pl, payout].some(v => v === null)) {
-    document.getElementById('roeEq-results').innerHTML = '<p style="color:#fbbf24">Preencha todos os campos.</p>';
-    return;
-  }
-
-  const roeEq = roe / pvp;
-  const lpa = lucro / papeis;
-  const dpa = lpa * (payout / 100);
-  const retido = lucro * (1 - payout / 100); // patrimônio retido no ano
-
-  // Projeção 15 anos (simples: capitalização do PL com retenção)
-  let plAtual = pl;
-  let rows = '';
-  for (let ano = 1; ano <= 15; ano++) {
-    const lucroAno = plAtual * (roe / 100);
-    const divAno = lucroAno * (payout / 100);
-    const retidoAno = lucroAno - divAno;
-    plAtual += retidoAno;
-    rows += `<tr><td>${ano}</td><td>R$ ${formatNumber(lucroAno)}</td><td>R$ ${formatNumber(divAno)}</td><td>R$ ${formatNumber(plAtual)}</td></tr>`;
-  }
-
-  document.getElementById('roeEq-results').innerHTML = `
-    <h3>ROE Equivalente</h3>
-    <table>
-      <tr><th>ROE Equivalente (ROE ÷ P/VP)</th><td style="font-size:1.2rem;color:#22c55e"><strong>${roeEq.toFixed(2)}%</strong></td></tr>
-      <tr><th>LPA</th><td>R$ ${formatNumber(lpa)}</td></tr>
-      <tr><th>DPA</th><td>R$ ${formatNumber(dpa)}</td></tr>
-      <tr><th>Patrimônio Retido (ano 1)</th><td>R$ ${formatNumber(retido)}</td></tr>
-    </table>
-    <h4 style="margin-top:1rem">Projeção 15 anos (retenção de lucro)</h4>
-    <div style="max-height:300px;overflow:auto">
-      <table>
-        <thead><tr><th>Ano</th><th>Lucro</th><th>Dividendo</th><th>PL Final</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-  `;
+/* Menu de Abas com Underline Animado */
+.tabs-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    background-color: var(--card-bg);
+    padding: 0.75rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-// ========== BOTÃO CALCULAR ==========
-document.getElementById('btnCalc').addEventListener('click', () => {
-  const method = document.getElementById('methodSelect').value;
-  if (method === 'all' || method === 'bazin') calcBazin();
-  if (method === 'all' || method === 'dy') calcDY();
-  if (method === 'all' || method === 'peg') calcPEG();
-  if (method === 'all' || method === 'roe') calcROE();
-  if (method === 'all' || method === 'roeEq') calcROEEq();
-});
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.75rem 1.25rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+}
 
-// ========== DOWNLOAD JSON / EXCEL ==========
-function collectData() {
-  return {
-    timestamp: new Date().toISOString(),
-    numberFormat: numberFormat(),
-    bazin: {
-      ticker: document.getElementById('bazin-ticker').value,
-      cotacao: document.getElementById('bazin-cotacao').value,
-      dy: document.getElementById('bazin-dy').value,
-      anos: document.getElementById('bazin-anos').value
-    },
-    dy: {
-      ticker: document.getElementById('dy-ticker').value,
-      cotacao: document.getElementById('dy-cotacao').value,
-      payout: document.getElementById('dy-payout').value,
-      lucro: document.getElementById('dy-lucro').value,
-      papeis: document.getElementById('dy-papeis').value
-    },
-    peg: {
-      pl: document.getElementById('peg-pl').value,
-      payout: document.getElementById('peg-payout').value,
-      roe: document.getElementById('peg-roe').value,
-      psr: document.getElementById('peg-psr').value
-    },
-    roe: {
-      plInicio: document.getElementById('roe-pl-inicio').value,
-      lucro: document.getElementById('roe-lucro').value,
-      div: document.getElementById('roe-div').value
-    },
-    roeEq: {
-      roe: document.getElementById('roeEq-roe').value,
-      pvp: document.getElementById('roeEq-pvp').value,
-      papeis: document.getElementById('roeEq-papeis').value,
-      lucro: document.getElementById('roeEq-lucro').value,
-      pl: document.getElementById('roeEq-pl').value,
-      payout: document.getElementById('roeEq-payout').value
+.tab-btn:hover {
+    color: var(--text-main);
+    background-color: rgba(34, 211, 238, 0.05);
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    background-color: rgba(34, 211, 238, 0.1);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 3px;
+    background-color: var(--accent);
+    border-radius: 2px;
+}
+
+/* Transição de Abas (Fade-in) */
+.tab-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+}
+
+.tab-content.active {
+    display: block;
+    opacity: 1;
+    animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Cards */
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+}
+
+.card-desc {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Grid de Formulários */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.input-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.input-group input,
+.input-group select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-main);
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+}
+
+.status-msg {
+    font-size: 0.8rem;
+    color: var(--accent);
+    min-height: 1.2rem;
+}
+
+/* Seção de DPA Dinâmico */
+.dpa-section {
+    margin-bottom: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.25rem;
+}
+
+.dpa-section label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.dpa-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.dpa-item-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.25rem 0.25rem 0.25rem 0.75rem;
+    gap: 0.5rem;
+}
+
+.dpa-item-wrap input {
+    width: 90px;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    font-size: 0.95rem;
+}
+
+.dpa-item-wrap input:focus {
+    outline: none;
+}
+
+.btn-remove-dpa {
+    background: rgba(239, 68, 68, 0.2);
+    border: none;
+    color: var(--danger);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.btn-remove-dpa:hover {
+    background: rgba(239, 68, 68, 0.4);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    border: 1px dashed var(--accent);
+    color: var(--accent);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: rgba(34, 211, 238, 0.1);
+}
+
+/* Área de Resultados */
+.results-box {
+    background-color: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.results-box h3 {
+    font-size: 1.1rem;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.result-item span {
+    color: var(--text-muted);
+}
+
+.result-item strong {
+    color: var(--text-main);
+    font-size: 1.1rem;
+}
+
+/* Badges Semânticos */
+.badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.badge.success {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge.info {
+    background-color: rgba(34, 211, 238, 0.2);
+    color: var(--accent);
+    border: 1px solid rgba(34, 211, 238, 0.3);
+}
+
+.badge.warning {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: var(--warning);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge.danger {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Pirâmide de DY */
+.pyramid-container {
+    margin-top: 2rem;
+    text-align: center;
+    background: rgba(15, 23, 42, 0.4);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.pyramid-container h4 {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: var(--text-muted);
+}
+
+.pyramid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.pyramid-level {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 4px;
+    transition: all 0.3s;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Níveis da pirâmide (Base verde 6% até Topo vermelho 15%) */
+.level-6 { width: 100%; background-color: #10b981; }
+.level-8 { width: 85%; background-color: #34d399; }
+.level-10 { width: 70%; background-color: #f59e0b; }
+.level-12 { width: 55%; background-color: #f97316; }
+.level-15 { width: 40%; background-color: #ef4444; }
+
+/* Aviso e Passo a Passo */
+.warning-box {
+    background-color: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: #fcd34d;
+}
+
+.step-text {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    background: var(--input-bg);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    white-space: pre-line;
+    margin-top: 0.5rem;
+}
+
+/* Tabela de Projeção */
+.table-container {
+    margin-top: 2rem;
+}
+
+.table-container h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--text-main);
+}
+
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    text-align: left;
+    background-color: var(--card-bg);
+}
+
+th, td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background-color: rgba(15, 23, 42, 0.8);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+tbody tr:nth-child(even) {
+    background-color: rgba(30, 41, 59, 0.5);
+}
+
+tbody tr:hover {
+    background-color: rgba(34, 211, 238, 0.05);
+}
+
+.footer {
+    text-align: center;
+    margin-top: 3rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .tabs-nav {
+        flex-direction: column;
     }
-  };
-}
-
-document.getElementById('btnDownloadJson').addEventListener('click', () => {
-  const data = collectData();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `valuation_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-});
-
-document.getElementById('btnDownloadExcel').addEventListener('click', () => {
-  const data = collectData();
-  let csv = 'Método,Campo,Valor\n';
-  const flat = (obj, prefix) => {
-    for (const [k, v] of Object.entries(obj)) {
-      csv += `${prefix},${k},"${v}"\n`;
+    .tab-btn {
+        width: 100%;
+        text-align: left;
     }
-  };
-  flat(data.bazin, 'Bazin');
-  flat(data.dy, 'DY Projetivo');
-  flat(data.peg, 'PEG');
-  flat(data.roe, 'ROE Projetivo');
-  flat(data.roeEq, 'ROE Equivalente');
-
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `valuation_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-});
-
-// ========== UPLOAD JSON + NOVAS AÇÕES ==========
-let stocks = [];
-
-function renderStocks() {
-  const section = document.getElementById('stocksListSection');
-  const list = document.getElementById('stocksList');
-  if (stocks.length === 0) {
-    section.style.display = 'none';
-    return;
-  }
-  section.style.display = 'block';
-  list.innerHTML = stocks.map((s, i) => `
-    <div class="stock-chip">
-      ${s.ticker || 'Sem ticker'}
-      <span class="remove" onclick="removeStock(${i})"><i class="fas fa-times"></i></span>
-    </div>
-  `).join('');
-}
-
-window.removeStock = function(i) {
-  stocks.splice(i, 1);
-  renderStocks();
-};
-
-document.getElementById('jsonUpload').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const data = JSON.parse(ev.target.result);
-      // Aceita array de ações ou objeto único
-      if (Array.isArray(data)) {
-        stocks = stocks.concat(data);
-      } else if (data.ticker) {
-        stocks.push(data);
-      } else {
-        // tenta extrair tickers dos métodos
-        if (data.bazin?.ticker) stocks.push({ ticker: data.bazin.ticker, ...data.bazin });
-        if (data.dy?.ticker) stocks.push({ ticker: data.dy.ticker, ...data.dy });
-      }
-      renderStocks();
-      alert(`${stocks.length} ação(ões) carregada(s)`);
-    } catch (err) {
-      alert('JSON inválido');
+    .tab-btn.active::after {
+        display: none;
     }
-  };
-  reader.readAsText(file);
-});
-
-document.getElementById('btnAddStock').addEventListener('click', () => {
-  const ticker = prompt('Digite o ticker da nova ação:');
-  if (ticker) {
-    stocks.push({ ticker: ticker.toUpperCase() });
-    renderStocks();
-  }
-});
+}
