@@ -13,38 +13,84 @@ tabButtons.forEach(btn => {
     });
 });
 
-// Função Auxiliar para simular ou buscar a cotação real do Investidor 10 via API pública/CORS ou simulação inteligente
-async function buscarCotacaoInvestidor10(ticker) {
-    const tickerLimpo = ticker.trim().toUpperCase();
+// Conversor de string monetária/bilhões (aceita vírgula ou ponto, ex: "110,3" ou "35.5")
+function parseValorBilhOes(inputStr) {
+    if (!inputStr) return 0;
+    // Substitui vírgula por ponto para conversão matemática
+    const normalizado = inputStr.trim().replace(',', '.');
+    const valorFloat = parseFloat(normalizado);
+    if (isNaN(valorFloat)) return 0;
     
-    try {
-        // Nota de Integração: Para contornar restrições de CORS de scrapers diretos no navegador sem backend próprio,
-        // utilizamos uma API agregadora pública ou simulação de rotas do Investidor10. 
-        // Caso possua um proxy backend próprio, substitua a URL abaixo pela sua rota de Web Scraping do Investidor10.
-        const response = `https://statusinvest.com.br/acao/ticker?ticker=${tickerLimpo}`; 
-        
-        // Simulação com base em dados de mercado reais recentes para fins de robustez do front-end:
-        // Em um ambiente de produção real com servidor Node.js/Python, faça o fetch direto na página do investidor10.com.br/acoes/[ticker]
-        
-        // Gerador pseudo-aleatório consistente baseado no ticker para simular preço caso o fetch externe bloqueie CORS:
-        let seed = 0;
-        for (let i = 0; i < tickerLimpo.length; i++) {
-            seed += tickerLimpo.charCodeAt(i);
-        }
-        const cotacaoSimulada = parseFloat((15 + (seed % 85) + Math.random()).toFixed(2));
-        const dySimulado = parseFloat((5 + (seed % 10) + Math.random()).toFixed(2));
-
-        return {
-            cotacao: cotacaoSimulada,
-            dy12m: dySimulado
-        };
-    } catch (error) {
-        console.error("Erro ao buscar cotação:", error);
-        return { cotacao: 25.00, dy12m: 8.5 };
-    }
+    // O que está antes da vírgula representa bilhões (multiplica por 1 bilhão)
+    return valorFloat * 1000000000;
 }
 
-// Formatar valor para Real (BRL)
+// Converte número bruto em formato escrito por extenso amigável em bilhões/milhões
+function numeroPorExtensoBilhoes(valorEmReais) {
+    if (isNaN(valorEmReais) || valorEmReais === 0) return "--";
+    
+    const bilhoes = Math.floor(valorEmReais / 1000000000);
+    const restoMilhoes = Math.round((valorEmReais % 1000000000) / 1000000);
+
+    let texto = "";
+    if (bilhoes > 0) {
+        texto += `${bilhoes} bilhão${bilhoes > 1 ? 's' : ''}`;
+    }
+    if (restoMilhoes > 0) {
+        if (bilhoes > 0) texto += " e ";
+        texto += `${restoMilhoes} milhão${restoMilhoes > 1 ? 'ões' : ''}`;
+    }
+    if (bilhoes === 0 && restoMilhoes === 0) {
+        texto = valorEmReais.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+    return texto;
+}
+
+// Atualização dinâmica dos textos descritivos conforme o usuário digita
+document.getElementById('lucro-proj').addEventListener('input', function() {
+    const val = parseValorBilhOes(this.value);
+    document.getElementById('extenso-lucro').textContent = "Valor por extenso: " + numeroPorExtensoBilhoes(val);
+});
+
+document.getElementById('n-papeis').addEventListener('input', function() {
+    const val = parseValorBilhOes(this.value);
+    const bilhoes = Math.floor(val / 1000000000);
+    const milhoes = Math.round((val % 1000000000) / 1000000);
+    let txt = "";
+    if (bilhoes > 0) txt += `${bilhoes} bilhão(ões) `;
+    if (milhoes > 0) txt += `${milhoes} milhão(ões) de ações`;
+    document.getElementById('extenso-papeis').textContent = "Ações: " + (txt || "--");
+});
+
+// Simulação aprimorada de cotação atual coerente com a B3
+async function buscarCotacaoRealista(ticker) {
+    const tickerLimpo = ticker.trim().toUpperCase();
+    
+    // Base de cotações reais aproximadas para testes ágeis no front-end
+    const precosConhecidos = {
+        'PETR4': { cotacao: 38.50, dy12m: 14.2 },
+        'VALE3': { cotacao: 62.00, dy12m: 8.9 },
+        'BBAS3': { cotacao: 28.30, dy12m: 9.5 },
+        'ITUB4': { cotacao: 34.20, dy12m: 7.1 },
+        'B3SA3': { cotacao: 11.40, dy12m: 6.8 },
+        'TAEE11': { cotacao: 36.80, dy12m: 8.2 }
+    };
+
+    if (precosConhecidos[tickerLimpo]) {
+        return precosConhecidos[tickerLimpo];
+    }
+
+    // Fallback dinâmico com base no tamanho do ticker se não estiver na lista fixa
+    let seed = 0;
+    for (let i = 0; i < tickerLimpo.length; i++) {
+        seed += tickerLimpo.charCodeAt(i);
+    }
+    return {
+        cotacao: parseFloat((15 + (seed % 65)).toFixed(2)),
+        dy12m: parseFloat((6 + (seed % 7)).toFixed(1))
+    };
+}
+
 function formatarMoeda(valor) {
     return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
@@ -56,31 +102,26 @@ document.getElementById('form-historico').addEventListener('submit', async funct
     e.preventDefault();
 
     const ticker = document.getElementById('ticker-hist').value.trim().toUpperCase();
-    const dpaMedio = parseFloat(document.getElementById('dpa-medio').value);
+    const dpaMedio = parseFloat(document.getElementById('dpa-medio').value.replace(',', '.'));
 
     if (!ticker || isNaN(dpaMedio) || dpaMedio <= 0) {
-        alert('Por favor, preencha todos os campos corretamente.');
+        alert('Por favor, preencha o Ticker e o DPA Médio corretamente.');
         return;
     }
 
-    // Busca cotação atual (Simulada/Integrada do Investidor 10)
-    const dadosMercado = await buscarCotacaoInvestidor10(ticker);
+    const dadosMercado = await buscarCotacaoRealista(ticker);
     const cotacaoAtual = dadosMercado.cotacao;
 
-    // Cálculo dos Preços Teto de Bazin (DPA / DY_Mínimo)
-    // DY Mínimos exigidos por Bazin: 6% (0.06), 8% (0.08), 10% (0.10), 12% (0.12), 15% (0.15)
     const teto6 = dpaMedio / 0.06;
     const teto8 = dpaMedio / 0.08;
     const teto10 = dpaMedio / 0.10;
     const teto12 = dpaMedio / 0.12;
     const teto15 = dpaMedio / 0.15;
 
-    // Preenche dados na tela
     document.getElementById('res-hist-ticker').textContent = ticker;
     document.getElementById('res-hist-cotacao').textContent = formatarMoeda(cotacaoAtual);
     document.getElementById('res-hist-dpa').textContent = formatarMoeda(dpaMedio);
 
-    // Status (Baseado no teto mais popular de Bazin: 8% ou 6%)
     const statusEl = document.getElementById('res-hist-status');
     if (cotacaoAtual <= teto8) {
         statusEl.textContent = 'Abaixo do Teto (Atrativo)';
@@ -90,14 +131,12 @@ document.getElementById('form-historico').addEventListener('submit', async funct
         statusEl.className = 'badge caro';
     }
 
-    // Preenche a pirâmide
     document.getElementById('teto-hist-6').textContent = formatarMoeda(teto6);
     document.getElementById('teto-hist-8').textContent = formatarMoeda(teto8);
     document.getElementById('teto-hist-10').textContent = formatarMoeda(teto10);
     document.getElementById('teto-hist-12').textContent = formatarMoeda(teto12);
     document.getElementById('teto-hist-15').textContent = formatarMoeda(teto15);
 
-    // Mostra resultados
     document.getElementById('resultado-historico').classList.remove('hidden');
 });
 
@@ -108,11 +147,11 @@ document.getElementById('form-projetivo').addEventListener('submit', async funct
     e.preventDefault();
 
     const ticker = document.getElementById('ticker-proj').value.trim().toUpperCase();
-    const lucroProj = parseFloat(document.getElementById('lucro-proj').value);
-    const nPapeis = parseFloat(document.getElementById('n-papeis').value);
-    const payoutPercent = parseFloat(document.getElementById('payout').value);
+    const lucroProj = parseValorBilhOes(document.getElementById('lucro-proj').value);
+    const nPapeis = parseValorBilhOes(document.getElementById('n-papeis').value);
+    const payoutPercent = parseFloat(document.getElementById('payout').value.replace(',', '.'));
 
-    if (!ticker || isNaN(lucroProj) || isNaN(nPapeis) || isNaN(payoutPercent) || nPapeis <= 0) {
+    if (!ticker || lucroProj <= 0 || nPapeis <= 0 || isNaN(payoutPercent)) {
         alert('Por favor, preencha todos os campos corretamente.');
         return;
     }
@@ -122,31 +161,26 @@ document.getElementById('form-projetivo').addEventListener('submit', async funct
     const payout = payoutPercent / 100;
     const dpaProj = lpa * payout; // Dividendos por Ação Projetado
 
-    // Busca cotação atual e DY 12m
-    const dadosMercado = await buscarCotacaoInvestidor10(ticker);
+    const dadosMercado = await buscarCotacaoRealista(ticker);
     const cotacaoAtual = dadosMercado.cotacao;
 
-    // Cálculo dos Preços Teto com base no DPA Projetivo
     const teto6 = dpaProj / 0.06;
     const teto8 = dpaProj / 0.08;
     const teto10 = dpaProj / 0.10;
     const teto12 = dpaProj / 0.12;
     const teto15 = dpaProj / 0.15;
 
-    // Preenche dados na tela
     document.getElementById('res-proj-ticker').textContent = ticker;
     document.getElementById('res-proj-cotacao').textContent = formatarMoeda(cotacaoAtual);
     document.getElementById('res-proj-dy12m').textContent = dadosMercado.dy12m + '%';
     document.getElementById('res-proj-lpa').textContent = formatarMoeda(lpa);
     document.getElementById('res-proj-dpa').textContent = formatarMoeda(dpaProj);
 
-    // Preenche a pirâmide projetiva
     document.getElementById('teto-proj-6').textContent = formatarMoeda(teto6);
     document.getElementById('teto-proj-8').textContent = formatarMoeda(teto8);
     document.getElementById('teto-proj-10').textContent = formatarMoeda(teto10);
     document.getElementById('teto-proj-12').textContent = formatarMoeda(teto12);
     document.getElementById('teto-proj-15').textContent = formatarMoeda(teto15);
 
-    // Mostra resultados
     document.getElementById('resultado-projetivo').classList.remove('hidden');
 });
