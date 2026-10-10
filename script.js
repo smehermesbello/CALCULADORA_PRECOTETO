@@ -1,45 +1,57 @@
 /**
- * Script Principal - Calculadora de Valuation & Múltiplos
- * Desenvolvido em Vanilla JavaScript (ES6+) com foco em clareza didática.
+ * Script Principal - Calculadora de Valuation Multi-Metodologia
+ * Inclui sincronização global, suporte a bilhões com vírgula e importação/exportação JSON/Excel.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
+    initGlobalSync();
     initBazinModule();
     initDyProjetivoModule();
     initPegModule();
     initRoeProjModule();
     initRoeEqModule();
+    initImportExport();
 });
 
 /**
- * Formata valores numéricos para moeda Real (BRL)
+ * Utilitários de formatação e conversão numérica
  */
 function formatBRL(value) {
     if (isNaN(value) || !isFinite(value)) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
-/**
- * Formata valores numéricos para porcentagem
- */
 function formatPercent(value) {
     if (isNaN(value) || !isFinite(value)) return '0,00%';
     return (value * 100).toFixed(2).replace('.', ',') + '%';
 }
 
-/**
- * Converte strings (com vírgula ou ponto) em número float válido
- */
 function parseNumber(value) {
     if (typeof value !== 'string') value = String(value || '0');
-    const cleanVal = value.replace(/\./g, '').replace(',', '.');
+    const cleanVal = value.trim().replace(/\./g, '').replace(',', '.');
     const num = parseFloat(cleanVal);
     return isNaN(num) ? 0 : num;
 }
 
 /**
- * Controla a navegação entre as abas da aplicação
+ * Converte valor permitindo abreviação em bilhões com vírgula (ex: "10,3" vira 10.300.000.000)
+ */
+function parseFinancialInput(valueStr, isBillionMode) {
+    if (typeof valueStr !== 'string') valueStr = String(valueStr || '0');
+    valueStr = valueStr.trim();
+    if (!valueStr) return 0;
+
+    const num = parseNumber(valueStr);
+    // Se o modo bilhões estiver ativado e o número for relativamente pequeno (< 1,000,000), interpretamos como bilhões.
+    if (isBillionMode && Math.abs(num) > 0 && Math.abs(num) < 1000000) {
+        return num * 1000000000;
+    }
+    return num;
+}
+
+/**
+ * Gerenciamento de abas
  */
 function initTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');
@@ -54,17 +66,15 @@ function initTabs() {
 
             button.classList.add('active');
             const activeSection = document.getElementById(targetTab);
-            if (activeSection) {
-                activeSection.classList.add('active');
-            }
+            if (activeSection) activeSection.classList.add('active');
         });
     });
 }
 
 /**
- * Simula a busca automática de cotação ao digitar o Ticker
+ * Simulação de busca de cotação e sincronização global
  */
-function setupTickerLookup(tickerInputId, statusId, priceInputId) {
+function setupTickerLookup(tickerInputId, statusId, priceInputId, callback) {
     const tickerInput = document.getElementById(tickerInputId);
     const statusMsg = document.getElementById(statusId);
     const priceInput = document.getElementById(priceInputId);
@@ -92,27 +102,129 @@ function setupTickerLookup(tickerInputId, statusId, priceInputId) {
             priceInput.value = simulatedPrice;
             priceInput.dispatchEvent(new Event('input'));
 
-            if (statusMsg) statusMsg.textContent = `Cotação simulada carregada para ${ticker}!`;
+            if (statusMsg) statusMsg.textContent = `Cotação de ${ticker} carregada!`;
             setTimeout(() => { if (statusMsg) statusMsg.textContent = ''; }, 3000);
+            if (callback) callback();
         }, 800);
     });
+}
+
+/**
+ * Sincronização da Aba Consolidada ("Todas de uma vez") com as demais abas
+ */
+function initGlobalSync() {
+    setupTickerLookup('g-ticker', 'g-ticker-status', 'g-preco', updateConsolidated);
+
+    const gInputs = [
+        'g-ticker', 'g-preco', 'g-lucro', 'g-pl-atual', 'g-acoes', 
+        'g-payout', 'g-roe', 'g-pl-multi', 'g-pvp', 'g-dy-min', 'global-scale-billion'
+    ];
+
+    gInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', updateConsolidated);
+            el.addEventListener('change', updateConsolidated);
+        }
+    });
+
+    function updateConsolidated() {
+        const isBillion = document.getElementById('global-scale-billion').checked;
+        const ticker = document.getElementById('g-ticker').value;
+        const preco = parseNumber(document.getElementById('g-preco').value);
+        const lucro = parseFinancialInput(document.getElementById('g-lucro').value, isBillion);
+        const plAtual = parseFinancialInput(document.getElementById('g-pl-atual').value, isBillion);
+        const acoes = parseNumber(document.getElementById('g-acoes').value);
+        const payout = parseNumber(document.getElementById('g-payout').value);
+        const roe = parseNumber(document.getElementById('g-roe').value);
+        const plMulti = parseNumber(document.getElementById('g-pl-multi').value);
+        const pvp = parseNumber(document.getElementById('g-pvp').value);
+        const dyMin = parseNumber(document.getElementById('g-dy-min').value);
+
+        // Alimentar Abas Individuais automaticamente
+        if (ticker) {
+            const bazinTick = document.getElementById('bazin-ticker');
+            const dypTick = document.getElementById('dyp-ticker');
+            if (bazinTick) bazinTick.value = ticker;
+            if (dypTick) dypTick.value = ticker;
+        }
+        if (preco > 0) {
+            const bazinPreco = document.getElementById('bazin-preco');
+            const dypPreco = document.getElementById('dyp-preco');
+            if (bazinPreco) bazinPreco.value = preco;
+            if (dypPreco) dypPreco.value = preco;
+        }
+
+        // 1. Bazin Summary (estimado via DPA médio simulado ou atual)
+        const dpaEstimado = acoes > 0 ? (lucro * (payout / 100)) / acoes : 2.00;
+        const bazinTeto = dyMin > 0 ? dpaEstimado / dyMin : 0;
+        document.getElementById('sum-bazin-teto').textContent = formatBRL(bazinTeto);
+        const sumBazinBadge = document.getElementById('sum-bazin-status');
+        if (bazinTeto > 0 && preco > 0) {
+            sumBazinBadge.className = preco <= bazinTeto ? 'badge success' : 'badge danger';
+            sumBazinBadge.textContent = preco <= bazinTeto ? 'Atrativo' : 'Esticado';
+        } else {
+            sumBazinBadge.className = 'badge info';
+            sumBazinBadge.textContent = 'Preencha dados';
+        }
+
+        // 2. DY Projetivo Summary
+        const lpa = acoes > 0 ? lucro / acoes : 0;
+        const dpaProj = lpa * (payout / 100);
+        const dyProj = preco > 0 ? dpaProj / preco : 0;
+        document.getElementById('sum-dyp-dy').textContent = formatPercent(dyProj);
+        const sumDypBadge = document.getElementById('sum-dyp-status');
+        sumDypBadge.className = dyProj >= dyMin ? 'badge success' : 'badge warning';
+        sumDypBadge.textContent = dyProj >= dyMin ? 'Acima do DY Mín' : 'Abaixo do DY Mín';
+
+        // 3. PEG Ratio Summary
+        const payoutDec = payout / 100;
+        const roeDec = roe / 100;
+        let denom = 1 - payoutDec;
+        if (denom <= 0) denom = 0.01;
+        const peg = (plMulti / denom) * roeDec;
+        document.getElementById('sum-peg-val').textContent = isNaN(peg) ? '0.00' : peg.toFixed(2).replace('.', ',');
+        const sumPegBadge = document.getElementById('sum-peg-status');
+        if (peg < 1) { sumPegBadge.className = 'badge success'; sumPegBadge.textContent = 'Muito Barato'; }
+        else if (peg <= 2) { sumPegBadge.className = 'badge info'; sumPegBadge.textContent = 'Bom Valor'; }
+        else if (peg <= 3) { sumPegBadge.className = 'badge warning'; sumPegBadge.textContent = 'Caro'; }
+        else { sumPegBadge.className = 'badge danger'; sumPegBadge.textContent = 'Sobrevalorizado'; }
+
+        // 4. ROE Projetivo Summary
+        const divEsperados = lucro * 0.4; // Estimativa padrão se não informado
+        const plFinal = plAtual + lucro - divEsperados;
+        const plMedio = (plAtual + plFinal) / 2;
+        const roeProjVal = plMedio > 0 ? lucro / plMedio : 0;
+        document.getElementById('sum-roej-val').textContent = formatPercent(roeProjVal);
+        const sumRoejBadge = document.getElementById('sum-roej-status');
+        sumRoejBadge.className = roeProjVal >= 0.15 ? 'badge success' : 'badge warning';
+        sumRoejBadge.textContent = roeProjVal >= 0.15 ? 'Robusto' : 'Moderado';
+
+        // 5. ROE Equivalente Summary
+        const roeEq = pvp > 0 ? (roe / 100) / pvp : 0;
+        document.getElementById('sum-roee-val').textContent = formatPercent(roeEq);
+        const sumRoeeBadge = document.getElementById('sum-roee-status');
+        sumRoeeBadge.className = roeEq >= 0.12 ? 'badge success' : 'badge info';
+        sumRoeeBadge.textContent = roeEq >= 0.12 ? 'Excelente Retorno' : 'Acompanhar';
+    }
+
+    updateConsolidated();
 }
 
 /**
  * Módulo 1: Valuation Preço Teto de Bazin
  */
 function initBazinModule() {
-    setupTickerLookup('bazin-ticker', 'bazin-ticker-status', 'bazin-preco');
+    setupTickerLookup('bazin-ticker', 'bazin-ticker-status', 'bazin-preco', calcBazin);
 
     const dpaListContainer = document.getElementById('bazin-dpa-list');
     const addDpaBtn = document.getElementById('bazin-add-dpa');
     const precoInput = document.getElementById('bazin-preco');
     const dySelect = document.getElementById('bazin-dy');
 
-    // DPAs iniciais de exemplo
-    addDpaInputField(1.50);
     addDpaInputField(1.80);
     addDpaInputField(2.10);
+    addDpaInputField(2.50);
 
     addDpaBtn.addEventListener('click', () => {
         addDpaInputField();
@@ -137,7 +249,6 @@ function initBazinModule() {
         removeBtn.type = 'button';
         removeBtn.className = 'btn-remove-dpa';
         removeBtn.textContent = '×';
-        removeBtn.title = 'Remover DPA';
         removeBtn.addEventListener('click', () => {
             wrap.remove();
             calcBazin();
@@ -146,7 +257,6 @@ function initBazinModule() {
         wrap.appendChild(input);
         wrap.appendChild(removeBtn);
         dpaListContainer.appendChild(wrap);
-        calcBazin();
     }
 
     function calcBazin() {
@@ -162,15 +272,11 @@ function initBazinModule() {
             }
         });
 
-        // DPA médio = soma(DPAs) / quantidade
         const dpaMedio = countDpa > 0 ? somaDpa / countDpa : 0;
         const dyMinimo = parseNumber(dySelect.value);
         const precoAtual = parseNumber(precoInput.value);
-
-        // Preço Teto = DPA médio / DY mínimo escolhido
         const precoTeto = dyMinimo > 0 ? dpaMedio / dyMinimo : 0;
 
-        // Margem de segurança = (Preço Teto - Cotação) / Preço Teto × 100
         let margemSeguranca = 0;
         if (precoTeto > 0) {
             margemSeguranca = ((precoTeto - precoAtual) / precoTeto) * 100;
@@ -200,7 +306,7 @@ function initBazinModule() {
  * Módulo 2: Valuation com DY Projetivo
  */
 function initDyProjetivoModule() {
-    setupTickerLookup('dyp-ticker', 'dyp-ticker-status', 'dyp-preco');
+    setupTickerLookup('dyp-ticker', 'dyp-ticker-status', 'dyp-preco', calcDyProjetivo);
 
     const precoInput = document.getElementById('dyp-preco');
     const payoutInput = document.getElementById('dyp-payout');
@@ -216,20 +322,13 @@ function initDyProjetivoModule() {
     function calcDyProjetivo() {
         const preco = parseNumber(precoInput.value);
         const payout = parseNumber(payoutInput.value) / 100;
-        const lucro = parseNumber(lucroInput.value);
+        const lucro = parseFinancialInput(lucroInput.value, true);
         const acoes = parseNumber(acoesInput.value);
         const dyMin = parseNumber(dyMinSelect.value);
 
-        // LPA = Lucro Líquido Projetivo / Nº de papéis
         const lpa = acoes > 0 ? lucro / acoes : 0;
-        
-        // DPA = LPA × Payout
         const dpa = lpa * payout;
-
-        // DY (12m) = DPA / Cotação × 100
         const dyProjetado = preco > 0 ? (dpa / preco) : 0;
-
-        // Preço Teto = DPA / DY mínimo
         const precoTeto = dyMin > 0 ? dpa / dyMin : 0;
 
         document.getElementById('res-dyp-lpa').textContent = formatBRL(lpa);
@@ -268,7 +367,6 @@ function initPegModule() {
         const payout = parseNumber(payoutInput.value) / 100;
         const roe = parseNumber(roeInput.value) / 100;
 
-        // Fórmula: PEG = (P/L / (1 - Payout)) × ROE
         let denominador = 1 - payout;
         if (denominador <= 0) denominador = 0.01;
 
@@ -283,7 +381,6 @@ function initPegModule() {
             return;
         }
 
-        // Classificação semântica por cores
         if (peg < 1) {
             classBadge.className = 'badge success';
             classBadge.textContent = 'Muito Barato (< 1) - Verde';
@@ -313,27 +410,21 @@ function initRoeProjModule() {
     [lucroInput, plInicialInput, divInput].forEach(inp => inp.addEventListener('input', calcRoeProjetivo));
 
     function calcRoeProjetivo() {
-        const lucro = parseNumber(lucroInput.value);
-        const plInicial = parseNumber(plInicialInput.value);
-        const dividendos = parseNumber(divInput.value);
+        const lucro = parseFinancialInput(lucroInput.value, true);
+        const plInicial = parseFinancialInput(plInicialInput.value, true);
+        const dividendos = parseFinancialInput(divInput.value, true);
 
-        // PL Final = PL Inicial + Lucro Projetado - Dividendos
         const plFinal = plInicial + lucro - dividendos;
-
-        // PL Médio = (PL Inicial + PL Final) / 2
         const plMedio = (plInicial + plFinal) / 2;
-
-        // ROE Projetivo = Lucro Projetado / PL Médio × 100
         const roeProjetivo = plMedio > 0 ? (lucro / plMedio) : 0;
 
         document.getElementById('res-roej-pl-final').textContent = formatBRL(plFinal);
         document.getElementById('res-roej-pl-medio').textContent = formatBRL(plMedio);
         document.getElementById('res-roej-val').textContent = formatPercent(roeProjetivo);
 
-        // Passo a passo descritivo
         const stepText = `Passo a Passo do Cálculo:
-1. PL Final: PL Inicial (${formatBRL(plInicial)}) + Lucro (${formatBRL(lucro)}) - Dividendos (${formatBRL(dividendos)}) = ${formatBRL(plFinal)}
-2. PL Médio: (PL Inicial + PL Final) / 2 = (${formatBRL(plInicial)} + ${formatBRL(plFinal)}) / 2 = ${formatBRL(plMedio)}
+1. PL Final Projetado: PL Inicial (${formatBRL(plInicial)}) + Lucro Projetado (${formatBRL(lucro)}) - Dividendos (${formatBRL(dividendos)}) = ${formatBRL(plFinal)}
+2. PL Médio Projetado: (PL Inicial + PL Final) / 2 = (${formatBRL(plInicial)} + ${formatBRL(plFinal)}) / 2 = ${formatBRL(plMedio)}
 3. ROE Projetivo: (Lucro Projetado / PL Médio) × 100 = (${formatBRL(lucro)} / ${formatBRL(plMedio)}) × 100 = ${(roeProjetivo * 100).toFixed(2)}%`;
 
         document.getElementById('roej-step-by-step').textContent = stepText;
@@ -361,20 +452,13 @@ function initRoeEqModule() {
         const roe = parseNumber(roeInput.value) / 100;
         const pvp = parseNumber(pvpInput.value);
         const acoes = parseNumber(acoesInput.value);
-        let lucro = parseNumber(lucroInput.value);
-        let pl = parseNumber(plInput.value);
+        let lucro = parseFinancialInput(lucroInput.value, true);
+        let pl = parseFinancialInput(plInput.value, true);
         const payout = parseNumber(payoutInput.value) / 100;
 
-        // ROE Equivalente = ROE / P/VP
         const roeEq = pvp > 0 ? roe / pvp : 0;
-
-        // Patrimônio Retido = 1 - Payout
         const retido = 1 - payout;
-
-        // LPA = Lucro / Nº de papéis
         const lpa = acoes > 0 ? lucro / acoes : 0;
-
-        // DPA = LPA × Payout
         const dpa = lpa * payout;
 
         document.getElementById('res-roee-equivalente').textContent = formatPercent(roeEq);
@@ -382,7 +466,6 @@ function initRoeEqModule() {
         document.getElementById('res-roee-lpa').textContent = formatBRL(lpa);
         document.getElementById('res-roee-dpa').textContent = formatBRL(dpa);
 
-        // Renderizar Tabela de 15 Anos
         const tbody = document.querySelector('#roee-table tbody');
         tbody.innerHTML = '';
 
@@ -391,7 +474,7 @@ function initRoeEqModule() {
         let acumDiv = 0;
 
         if (currentPL <= 0 && currentLucro > 0) {
-            currentPL = currentLucro * 5; 
+            currentPL = currentLucro * 5;
         }
 
         for (let ano = 1; ano <= 15; ano++) {
@@ -421,4 +504,87 @@ function initRoeEqModule() {
     }
 
     calcRoeEquivalente();
+}
+
+/**
+ * Módulo de Importação / Exportação (JSON e Excel/CSV)
+ */
+function initImportExport() {
+    const btnExportJson = document.getElementById('btn-export-json');
+    const btnExportExcel = document.getElementById('btn-export-excel');
+    const fileImportJson = document.getElementById('file-import-json');
+
+    btnExportJson.addEventListener('click', () => {
+        const data = gatherCurrentState();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `valuation_${(data.ticker || 'acao').toLowerCase()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    btnExportExcel.addEventListener('click', () => {
+        const data = gatherCurrentState();
+        let csv = '\uFEFFMétrica;Valor\n';
+        for (const [key, val] of Object.entries(data)) {
+            csv += `${key};"${val}"\n`;
+        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `valuation_${(data.ticker || 'acao').toLowerCase()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    fileImportJson.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const imported = JSON.parse(event.target.result);
+                applyState(imported);
+                alert(`Dados da ação ${imported.ticker || ''} importados com sucesso! O sistema foi atualizado.`);
+            } catch (err) {
+                alert('Erro ao ler o arquivo JSON. Certifique-se de que é um formato válido.');
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    function gatherCurrentState() {
+        return {
+            ticker: document.getElementById('g-ticker').value,
+            cotacao: document.getElementById('g-preco').value,
+            lucroProjetivo: document.getElementById('g-lucro').value,
+            patrimonioLiquido: document.getElementById('g-pl-atual').value,
+            acoesCirculacao: document.getElementById('g-acoes').value,
+            payout: document.getElementById('g-payout').value,
+            roe: document.getElementById('g-roe').value,
+            pl: document.getElementById('g-pl-multi').value,
+            pvp: document.getElementById('g-pvp').value,
+            dyMinimo: document.getElementById('g-dy-min').value
+        };
+    }
+
+    function applyState(data) {
+        if (data.ticker) document.getElementById('g-ticker').value = data.ticker;
+        if (data.cotacao) document.getElementById('g-preco').value = data.cotacao;
+        if (data.lucroProjetivo) document.getElementById('g-lucro').value = data.lucroProjetivo;
+        if (data.patrimonioLiquido) document.getElementById('g-pl-atual').value = data.patrimonioLiquido;
+        if (data.acoesCirculacao) document.getElementById('g-acoes').value = data.acoesCirculacao;
+        if (data.payout) document.getElementById('g-payout').value = data.payout;
+        if (data.roe) document.getElementById('g-roe').value = data.roe;
+        if (data.pl) document.getElementById('g-pl-multi').value = data.pl;
+        if (data.pvp) document.getElementById('g-pvp').value = data.pvp;
+        if (data.dyMinimo) document.getElementById('g-dy-min').value = data.dyMinimo;
+
+        // Disparar evento para recalcular
+        document.getElementById('g-ticker').dispatchEvent(new Event('input'));
+    }
 }
