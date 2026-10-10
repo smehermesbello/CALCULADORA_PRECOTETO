@@ -1,57 +1,303 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plataforma de Valuation</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Avançada de Valuation e Investimentos</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-<header class="top">
-  <h1>Plataforma de Valuation</h1>
-  <div class="actions">
-    <button id="btnJson">Baixar JSON</button>
-    <button id="btnXlsx">Baixar Excel</button>
-    <button id="btnImport">Subir JSON</button>
-    <input type="file" id="fileJson" accept=".json,application/json" hidden>
-  </div>
-</header>
-<div class="layout">
-  <aside>
-    <h2>Ações</h2>
-    <ul id="stockList"></ul>
-    <button id="btnAdd" class="full">Adicionar ação</button>
-    <p class="hint">Ações vindas de um JSON aparecem com a etiqueta “JSON”. As novas ficam sem etiqueta.</p>
-  </aside>
-  <main>
-    <section class="panel controls">
-      <label>Método
-        <select id="method">
-          <option value="todos">Todos de uma vez</option>
-          <option value="bazin">1. Bazin (histórico)</option>
-          <option value="dyproj">2. DY projetivo</option>
-          <option value="roe">3. ROE projetivo</option>
-          <option value="peg">4. PEG Ratio</option>
-          <option value="longo">5. Longo prazo (15 anos)</option>
-        </select>
-      </label>
-      <label>Janela do histórico (Bazin)
-        <select id="win"><option value="3">3 anos</option><option value="5" selected>5 anos</option></select>
-      </label>
-      <label class="check"><input type="checkbox" id="reuse" checked> Reaproveitar métricas entre módulos</label>
-    </section>
-    <section class="panel">
-      <div class="row-head">
-        <h2>O que preencher</h2>
-        <div><button id="btnFetch">Buscar no Investidor10</button> <span id="status" class="status"></span></div>
-      </div>
-      <div id="form" class="grid"></div>
-    </section>
-    <section id="results"></section>
-  </main>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="script.js"></script>
+    <div class="app-container">
+        <!-- Sidebar / Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <i class="fa-solid fa-chart-line"></i>
+                <h2>ValuationPRO</h2>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-target="mod-integrated"><i class="fa-solid fa-layer-group"></i> Visão Integrada (Todos)</button>
+                <button class="nav-btn" data-target="mod-bazin"><i class="fa-solid fa-coins"></i> 1. Valuation Bazin</button>
+                <button class="nav-btn" data-target="mod-dy-proj"><i class="fa-solid fa-percent"></i> 2. DY Projetivo</button>
+                <button class="nav-btn" data-target="mod-roe-proj"><i class="fa-solid fa-chart-pie"></i> 3. ROE Projetivo</button>
+                <button class="nav-btn" data-target="mod-peg"><i class="fa-solid fa-scale-balanced"></i> 4. Análise PEG Ratio</button>
+                <button class="nav-btn" data-target="mod-long-term"><i class="fa-solid fa-calendar-days"></i> 5. Projeção 15 Anos</button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="io-buttons">
+                    <label class="btn-io upload-btn" title="Subir JSON">
+                        <i class="fa-solid fa-upload"></i> Subir JSON
+                        <input type="file" id="importJson" accept=".json" style="display:none;">
+                    </label>
+                    <button class="btn-io" id="exportJson" title="Baixar JSON"><i class="fa-solid fa-download"></i> JSON</button>
+                    <button class="btn-io" id="exportExcel" title="Baixar Excel"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="tickerSearch" placeholder="Pesquisar Ticker (Ex: PETR4, VALE3, BBAS3, TAEE11)...">
+                    <button id="btnFetchInvestidor10" class="btn-fetch"><i class="fa-solid fa-globe"></i> Buscar (Inv. 10)</button>
+                </div>
+                <div class="user-status">
+                    <span id="currentStockBadge"><i class="fa-solid fa-tag"></i> Ticker: <strong>Nenhum</strong></span>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <!-- MODAL / SECTION: INTEGRATED (TODOS DE UMA VEZ) -->
+                <section id="mod-integrated" class="module-section active">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-layer-group"></i> Visão Integrada - Todos os Módulos</h2>
+                        <p>Preencha os dados base da empresa abaixo para calcular simultaneamente todos os 5 modelos de valuation e projeção.</p>
+                    </div>
+
+                    <div class="integrated-grid">
+                        <div class="card input-card">
+                            <h3><i class="fa-solid fa-sliders"></i> Dados de Entrada (Inputs Gerais)</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Ticker:</label>
+                                    <input type="text" id="int-ticker" value="PETR4">
+                                </div>
+                                <div class="form-group">
+                                    <label>Cotação Atual (R$):</label>
+                                    <input type="number" id="int-cotacao" step="0.01" value="38.50">
+                                </div>
+                                <div class="form-group">
+                                    <label>Patrimônio Líquido Atual (PL):</label>
+                                    <input type="number" id="int-pl" step="0.01" value="350000000000">
+                                </div>
+                                <div class="form-group">
+                                    <label>Lucro Líquido Projetivo (R$):</label>
+                                    <input type="number" id="int-lucro" step="0.01" value="120000000000">
+                                </div>
+                                <div class="form-group">
+                                    <label>DPA Médio Histórico (Bazin):</label>
+                                    <input type="number" id="int-dpa-hist" step="0.01" value="4.50">
+                                </div>
+                                <div class="form-group">
+                                    <label>Payout Médio (%):</label>
+                                    <input type="number" id="int-payout" step="0.1" value="60.0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Número de Papéis (Total):</label>
+                                    <input type="number" id="int-papeis" value="13000000000">
+                                </div>
+                                <div class="form-group">
+                                    <label>P/L Atual:</label>
+                                    <input type="number" id="int-pl-multiplo" step="0.01" value="4.17">
+                                </div>
+                                <div class="form-group">
+                                    <label>P/VP Atual:</label>
+                                    <input type="number" id="int-pvp" step="0.01" value="1.43">
+                                </div>
+                                <div class="form-group">
+                                    <label>ROE Atual / Base (%):</label>
+                                    <input type="number" id="int-roe" step="0.1" value="34.2">
+                                </div>
+                            </div>
+                            <button id="btnRunAll" class="btn-primary"><i class="fa-solid fa-calculator"></i> Calcular Todos os Módulos</button>
+                        </div>
+
+                        <div class="card output-card">
+                            <h3><i class="fa-solid fa-clipboard-check"></i> Resumo Consolidado & Recomendações</h3>
+                            <div id="integratedSummary" class="summary-results">
+                                <p class="placeholder-text">Clique em "Calcular Todos os Módulos" para gerar o relatório completo.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 1: BAZIN -->
+                <section id="mod-bazin" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-coins"></i> 1. Valuation Bazin (Histórico)</h2>
+                        <p>Calcula o preço teto com base no histórico de dividendos pagos (DPA) e exibe a pirâmide de retorno (6% a 15%).</p>
+                    </div>
+                    <div class="module-content-grid">
+                        <div class="card">
+                            <h3>Parâmetros - Bazin</h3>
+                            <div class="form-group">
+                                <label>DPA Médio (Últimos 3 a 5 anos) (R$):</label>
+                                <input type="number" id="bazin-dpa" step="0.01" value="4.50">
+                            </div>
+                            <div class="form-group">
+                                <label>Cotação Atual (R$):</label>
+                                <input type="number" id="bazin-cotacao" step="0.01" value="38.50">
+                            </div>
+                            <button class="btn-primary" onclick="calcBazin()"><i class="fa-solid fa-calculator"></i> Calcular Bazin</button>
+                        </div>
+                        <div class="card">
+                            <h3>Pirâmide de Preço Teto (Bazin)</h3>
+                            <div id="bazinPyramid" class="pyramid-container"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 2: DY PROJETIVO -->
+                <section id="mod-dy-proj" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-percent"></i> 2. Valuation com DY Projetivo</h2>
+                        <p>Estima o preço teto utilizando projeções de lucro, payout e número de ações para os próximos períodos.</p>
+                    </div>
+                    <div class="module-content-grid">
+                        <div class="card">
+                            <h3>Parâmetros - DY Projetivo</h3>
+                            <div class="form-group">
+                                <label>Lucro Líquido Projetivo (R$):</label>
+                                <input type="number" id="dy-lucro" step="0.01" value="120000000000">
+                            </div>
+                            <div class="form-group">
+                                <label>Número Total de Papéis:</label>
+                                <input type="number" id="dy-papeis" value="13000000000">
+                            </div>
+                            <div class="form-group">
+                                <label>Payout Projetado (%):</label>
+                                <input type="number" id="dy-payout" step="0.1" value="60.0">
+                            </div>
+                            <div class="form-group">
+                                <label>Cotação Atual (R$):</label>
+                                <input type="number" id="dy-cotacao" step="0.01" value="38.50">
+                            </div>
+                            <button class="btn-primary" onclick="calcDyProj()"><i class="fa-solid fa-calculator"></i> Calcular DY Projetivo</button>
+                        </div>
+                        <div class="card">
+                            <h3>Resultados & Pirâmide Projetiva</h3>
+                            <div id="dyProjResults"></div>
+                            <div id="dyPyramid" class="pyramid-container"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 3: ROE PROJETIVO -->
+                <section id="mod-roe-proj" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-chart-pie"></i> 3. Cálculo de ROE Projetivo (Base de Apoio)</h2>
+                        <p>Projeta a rentabilidade futura sobre o patrimônio e alimenta os demais módulos.</p>
+                    </div>
+                    <div class="module-content-grid">
+                        <div class="card">
+                            <h3>Parâmetros - ROE Projetivo</h3>
+                            <div class="form-group">
+                                <label>Patrimônio Líquido Inicial (R$):</label>
+                                <input type="number" id="roe-pli" step="0.01" value="350000000000">
+                            </div>
+                            <div class="form-group">
+                                <label>Lucro Líquido Projetivo (NTM) (R$):</label>
+                                <input type="number" id="roe-lucro" step="0.01" value="120000000000">
+                            </div>
+                            <div class="form-group">
+                                <label>Dividendos Esperados / Distribuídos (R$):</label>
+                                <input type="number" id="roe-divs" step="0.01" value="72000000000">
+                            </div>
+                            <button class="btn-primary" onclick="calcRoeProj()"><i class="fa-solid fa-calculator"></i> Calcular ROE Projetivo</button>
+                        </div>
+                        <div class="card">
+                            <h3>Resultados do ROE</h3>
+                            <div id="roeResults" class="results-box"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 4: PEG RATIO -->
+                <section id="mod-peg" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-scale-balanced"></i> 4. Análise de PEG Ratio (Crescimento / Small Caps)</h2>
+                        <p>Avalia se o preço pago pelo crescimento da empresa é atrativo (ajustado por P/L, Payout e ROE).</p>
+                    </div>
+                    <div class="module-content-grid">
+                        <div class="card">
+                            <h3>Parâmetros - PEG Ratio</h3>
+                            <div class="form-group">
+                                <label>P/L (Preço / Lucro):</label>
+                                <input type="number" id="peg-pl" step="0.01" value="4.17">
+                            </div>
+                            <div class="form-group">
+                                <label>Payout (%):</label>
+                                <input type="number" id="peg-payout" step="0.1" value="60.0">
+                            </div>
+                            <div class="form-group">
+                                <label>ROE (%):</label>
+                                <input type="number" id="peg-roe" step="0.1" value="34.2">
+                            </div>
+                            <div class="form-group">
+                                <label>Receita Líquida (Caso sem lucro / PSR):</label>
+                                <input type="number" id="peg-receita" step="0.01" value="500000000000">
+                            </div>
+                            <div class="form-group">
+                                <label>Valor de Mercado (Caso sem lucro / PSR):</label>
+                                <input type="number" id="peg-valormercado" step="0.01" value="450000000000">
+                            </div>
+                            <button class="btn-primary" onclick="calcPegRatio()"><i class="fa-solid fa-calculator"></i> Analisar PEG Ratio</button>
+                        </div>
+                        <div class="card">
+                            <h3>Resultado da Análise</h3>
+                            <div id="pegResults" class="results-box"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 5: LONG TERM PROJECTION -->
+                <section id="mod-long-term" class="module-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-calendar-days"></i> 5. Projeção de Longo Prazo (15 Anos) com ROE Equivalente</h2>
+                        <p>Simula a acumulação patrimonial, evolução de lucros, dividendos e ROE equivalente ao longo de 15 anos.</p>
+                    </div>
+                    <div class="module-content-grid">
+                        <div class="card">
+                            <h3>Parâmetros - Projeção 15 Anos</h3>
+                            <div class="form-grid">
+                                <div class="form-group"><label>PL Inicial:</label><input type="number" id="lt-pli" value="350000000000"></div>
+                                <div class="form-group"><label>Lucro Inicial:</label><input type="number" id="lt-lucro" value="120000000000"></div>
+                                <div class="form-group"><label>ROE (%):</label><input type="number" id="lt-roe" value="34.2"></div>
+                                <div class="form-group"><label>P/VP:</label><input type="number" id="lt-pvp" value="1.43"></div>
+                                <div class="form-group"><label>N. de Papéis:</label><input type="number" id="lt-papeis" value="13000000000"></div>
+                                <div class="form-group"><label>Payout Médio (%):</label><input type="number" id="lt-payout" value="60.0"></div>
+                            </div>
+                            <button class="btn-primary" onclick="calcLongTerm()"><i class="fa-solid fa-calculator"></i> Gerar Projeção de 15 Anos</button>
+                        </div>
+                        <div class="card full-width">
+                            <h3>Gráfico de Evolução Patrimonial e Lucros (15 Anos)</h3>
+                            <div class="chart-container">
+                                <canvas id="longTermChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card full-width">
+                            <h3>Tabela Detalhada (Ano a Ano)</h3>
+                            <div class="table-responsive">
+                                <table id="longTermTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Ano</th>
+                                            <th>Lucro do Ano (R$)</th>
+                                            <th>Patrimônio Retido (R$)</th>
+                                            <th>PL Final (R$)</th>
+                                            <th>LPA (R$)</th>
+                                            <th>DPA (R$)</th>
+                                            <th>ROE Eq. (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script -->
+    <script src="script.js"></script>
 </body>
 </html>
