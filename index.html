@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valuation Automatizado - Método Bazin</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><i class="fa-solid fa-chart-line"></i> Valuation Bazin Pro</h1>
+            <p>Automatize seus cálculos de Preço Teto baseados na clássica metodologia de Décio Bazin</p>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <!-- Seletor de Abordagem -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="historico">
+                <i class="fa-solid fa-history"></i> DY Histórico (DPA Médio)
+            </button>
+            <button class="tab-btn" data-tab="projetivo">
+                <i class="fa-solid fa-crystal-ball"></i> DY Projetivo (Lucro & Payout)
+            </button>
+        </div>
+
+        <!-- ABORDAGEM 1: DY HISTÓRICO -->
+        <section id="historico" class="tab-content active">
+            <div class="card">
+                <h2>Valuation por Histórico de Dividendos</h2>
+                <p class="subtitle">Insira o ticker e o DPA médio para calcular os preços teto conforme as exigências de retorno de Bazin.</p>
+                
+                <form id="form-historico" class="form-grid">
+                    <div class="input-group">
+                        <label for="ticker-hist"><i class="fa-solid fa-tag"></i> Ticker da Ação</label>
+                        <input type="text" id="ticker-hist" placeholder="Ex: PETR4, VALE3, BBAS3" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="dpa-medio"><i class="fa-solid fa-coins"></i> DPA Médio Anual (R$)</label>
+                        <input type="number" step="0.0001" id="dpa-medio" placeholder="Ex: 2.50 (Média últimos 3 ou 5 anos)" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary"><i class="fa-solid fa-calculator"></i> Calcular Valuation</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Resultados Histórico -->
+            <div id="resultado-historico" class="result-container hidden">
+                <div class="stock-info-card">
+                    <h3>Ativo: <span id="res-hist-ticker">-</span></h3>
+                    <div class="info-grid">
+                        <div><span>Cotação Atual:</span> <strong id="res-hist-cotacao">R$ --,--</strong></div>
+                        <div><span>DPA Médio Utilizado:</span> <strong id="res-hist-dpa">R$ --,--</strong></div>
+                        <div><span>Status Atual:</span> <span id="res-hist-status" class="badge">--</span></div>
+                    </div>
+                </div>
+
+                <!-- Pirâmide de Preço Teto -->
+                <div class="pyramid-wrapper">
+                    <h3>Pirâmide de Preço Teto (Retornos de Bazin)</h3>
+                    <p class="pyramid-desc">Base de 6% (maior risco/segurança) até o Topo de 15% (conservador).</p>
+                    
+                    <div class="pyramid">
+                        <div class="pyramid-level level-15">
+                            <span class="label">15% ao ano (Topo)</span>
+                            <span class="value" id="teto-hist-15">R$ 0,00</span>
+                        </div>
+                        <div class="pyramid-level level-12">
+                            <span class="label">12% ao ano</span>
+                            <span class="value" id="teto-hist-12">R$ 0,00</span>
+                        </div>
+                        <div class="pyramid-level level-10">
+                            <span class="label">10% ao ano</span>
+                            <span class="value" id="teto-hist-10">R$ 0,00</span>
+                        </div>
+                        <div class="pyramid-level level-8">
+                            <span class="label">8% ao ano</span>
+                            <span class="value" id="teto-hist-8">R$ 0,00</span>
+                        </div>
+                        <div class="pyramid-level level-6">
+                            <span class="label">6% ao ano (Base)</span>
+                            <span class="value" id="teto-hist-6">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABORDAGEM 2: DY PROJETIVO -->
+        <section id="projetivo" class="tab-content">
+            <div class="card">
+                <h2>Valuation por Lucro Projetivo e Payout</h2>
+                <p class="subtitle">Insira as projeções da empresa para projetar o LPA, DPA e calcular os tetos de compra.</p>
+                
+                <form id="form-projetivo" class="form-grid">
+                    <div class="input-group">
+                        <label for="ticker-proj"><i class="fa-solid fa-tag"></i> Ticker da Ação</label>
+                        <input type="text" id="ticker-proj" placeholder="Ex: ITUB4, B3SA3" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="lucro-proj"><i class="fa-solid fa-chart-pie"></i> Lucro Projetivo Anual (R$)</label>
+                        <input type="number" step="0.01" id="lucro-proj" placeholder="Ex: 5000000000 (5 Bilhões)" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="n-papeis"><i class="fa-solid fa-layer-group"></i> Nº de Papéis (Ações Totais)</label>
+                        <input type="number" step="1" id="n-papeis" placeholder="Ex: 1000000000 (1 Bilhão)" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="payout"><i class="fa-solid fa-percent"></i> Payout Esperado (%)</label>
+                        <input type="number" step="0.1" id="payout" placeholder="Ex: 50 (para 50% de distribuição)" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary"><i class="fa-solid fa-calculator"></i> Calcular Valuation Projetivo</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Resultados Projetivo -->
+            <div id="resultado-projetivo" class="result-container hidden">
+                <div class="stock-info-card">
+                    <h3>Ativo: <span id="res-proj-ticker">-</span></h3>
+                    <div class="info-grid cols-4">
+                        <div><span>Cotação Atual:</span> <strong id="res-proj-cotacao">R$ --,--</strong></div>
+                        <div><span>DY (12m):</span> <strong id="res-proj-dy12m">--%</strong></div>
+                        <div><span>LPA Projetivo:</span> <strong id="res-proj-lpa">R$ --,--</strong></div>
+                        <div><span>DPA Projetivo:</span> <strong id="res-proj-dpa">R$ --,--</strong></div>
+                    </div>
+                </div>
+
+                <!-- Pirâmide de Preço Teto -->
+                <div class="pyramid-wrapper">
+                    <h3>Pirâmide de Preço Teto (Com Base no DPA Projetivo)</h3>
+                    <p class="pyramid-desc">Base de 6% (maior risco/segurança) até o Topo de 15% (conservador).</p>
+                    
+                    <div class="pyramid">
+                        <div class="pyramid-level level-15">
+                            <span class="label">15% ao ano (Topo)</span>
+                            <span class="value" id="teto-proj-15">R$ 0,00</span>
+                        </div>
+                        <div class="pyramid-level level-12">
+                            <span class="label">12% ao ano</span>
+                            <span class="value" id="teto-proj-12">R$ 0,00</span>
+                        </div>
+                        <div class="pyramid-level level-10">
+                            <span class="label">10% ao ano</span>
+                            <span class="value" id="teto-proj-10">R$ 0,00</span>
+                        </div>
+                        <div class="pyramid-level level-8">
+                            <span class="label">8% ao ano</span>
+                            <span class="value" id="teto-proj-8">R$ 0,00</span>
+                        </div>
+                        <div class="pyramid-level level-6">
+                            <span class="label">6% ao ano (Base)</span>
+                            <span class="value" id="teto-proj-6">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Valuation Bazin Pro. Cotações simuladas via Web Scraping / API pública integrável com Investidor10.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
