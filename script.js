@@ -1,509 +1,424 @@
-// --- Database / State with Sample Stocks & JSON support ---
-let stockDatabase = [
-    {
-        ticker: "PETR4",
-        cotacao: 38.50,
-        pl: 4.17,
-        pvp: 1.43,
-        roe: 34.2,
-        lucro: 120000000000,
-        plInicial: 350000000000,
-        dpaHist: 4.50,
-        payout: 60.0,
-        papeis: 13000000000,
-        receita: 500000000000,
-        valorMercado: 450000000000
-    },
-    {
-        ticker: "VALE3",
-        cotacao: 62.40,
-        pl: 6.80,
-        pvp: 1.20,
-        roe: 18.5,
-        lucro: 40000000000,
-        plInicial: 220000000000,
-        dpaHist: 3.80,
-        payout: 50.0,
-        papeis: 4500000000,
-        receita: 200000000000,
-        valorMercado: 280000000000
-    },
-    {
-        ticker: "BBAS3",
-        cotacao: 27.20,
-        pl: 4.50,
-        pvp: 0.85,
-        roe: 21.0,
-        lucro: 35000000000,
-        plInicial: 160000000000,
-        dpaHist: 2.90,
-        payout: 45.0,
-        papeis: 5700000000,
-        receita: 150000000000,
-        valorMercado: 155000000000
-    },
-    {
-        ticker: "TAEE11",
-        cotacao: 35.80,
-        pl: 8.90,
-        pvp: 2.10,
-        roe: 24.0,
-        lucro: 2200000000,
-        plInicial: 9500000000,
-        dpaHist: 3.20,
-        payout: 85.0,
-        papeis: 1034000000,
-        receita: 6000000000,
-        valorMercado: 37000000000
-    }
-];
+/**
+ * Script Principal - Calculadora de Valuation & Múltiplos
+ * Desenvolvido em Vanilla JavaScript (ES6+) com foco em clareza didática.
+ */
 
-let currentChart = null;
-
-// --- Navigation setup ---
-document.addEventListener("DOMContentLoaded", () => {
-    const navButtons = document.querySelectorAll(".nav-btn");
-    const sections = document.querySelectorAll(".module-section");
-
-    navButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            navButtons.forEach(b => b.classList.remove("active"));
-            sections.forEach(s => s.classList.remove("active"));
-
-            btn.classList.add("active");
-            const targetId = btn.getAttribute("data-target");
-            document.getElementById(targetId).classList.add("active");
-        });
-    });
-
-    // Initialize with default stock data
-    loadStockIntoForms("PETR4");
-
-    // Event Listeners for I/O
-    document.getElementById("exportJson").addEventListener("click", exportToJson);
-    document.getElementById("exportExcel").addEventListener("click", exportToExcel);
-    document.getElementById("importJson").addEventListener("change", importFromJson);
-    document.getElementById("btnFetchInvestidor10").addEventListener("click", fetchInvestidor10Data);
-    document.getElementById("btnRunAll").addEventListener("click", runAllModules);
-
-    // Initial calculations
-    calcBazin();
-    calcDyProj();
-    calcRoeProj();
-    calcPegRatio();
-    calcLongTerm();
+document.addEventListener('DOMContentLoaded', () => {
+    initTabs();
+    initBazinModule();
+    initDyProjetivoModule();
+    initPegModule();
+    initRoeProjModule();
+    initRoeEqModule();
 });
 
-// --- Find and Load Stock Data into Inputs ---
-function loadStockIntoForms(tickerSymbol) {
-    const stock = stockDatabase.find(s => s.ticker.toUpperCase() === tickerSymbol.toUpperCase());
-    if (!stock) return false;
-
-    // Badge
-    document.getElementById("currentStockBadge").innerHTML = `<i class="fa-solid fa-tag"></i> Ticker: <strong>${stock.ticker}</strong> (Cotação: R$ ${stock.cotacao.toFixed(2)})`;
-    document.getElementById("tickerSearch").value = stock.ticker;
-
-    // Integrated / General
-    setVal("int-ticker", stock.ticker);
-    setVal("int-cotacao", stock.cotacao);
-    setVal("int-pl", stock.plInicial);
-    setVal("int-lucro", stock.lucro);
-    setVal("int-dpa-hist", stock.dpaHist);
-    setVal("int-payout", stock.payout);
-    setVal("int-papeis", stock.papeis);
-    setVal("int-pl-multiplo", stock.pl);
-    setVal("int-pvp", stock.pvp);
-    setVal("int-roe", stock.roe);
-
-    // Module 1: Bazin
-    setVal("bazin-dpa", stock.dpaHist);
-    setVal("bazin-cotacao", stock.cotacao);
-
-    // Module 2: DY Projetivo
-    setVal("dy-lucro", stock.lucro);
-    setVal("dy-papeis", stock.papeis);
-    setVal("dy-payout", stock.payout);
-    setVal("dy-cotacao", stock.cotacao);
-
-    // Module 3: ROE Projetivo
-    setVal("roe-pli", stock.plInicial);
-    setVal("roe-lucro", stock.lucro);
-    setVal("roe-divs", stock.lucro * (stock.payout / 100));
-
-    // Module 4: PEG
-    setVal("peg-pl", stock.pl);
-    setVal("peg-payout", stock.payout);
-    setVal("peg-roe", stock.roe);
-    setVal("peg-receita", stock.receita);
-    setVal("peg-valormercado", stock.valorMercado);
-
-    // Module 5: Long Term
-    setVal("lt-pli", stock.plInicial);
-    setVal("lt-lucro", stock.lucro);
-    setVal("lt-roe", stock.roe);
-    setVal("lt-pvp", stock.pvp);
-    setVal("lt-papeis", stock.papeis);
-    setVal("lt-payout", stock.payout);
-
-    return true;
+/**
+ * Formata valores numéricos para moeda Real (BRL)
+ */
+function formatBRL(value) {
+    if (isNaN(value) || !isFinite(value)) return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
-function setVal(id, val) {
-    const el = document.getElementById(id);
-    if (el) el.value = val;
+/**
+ * Formata valores numéricos para porcentagem
+ */
+function formatPercent(value) {
+    if (isNaN(value) || !isFinite(value)) return '0,00%';
+    return (value * 100).toFixed(2).replace('.', ',') + '%';
 }
 
-function getNum(id) {
-    const el = document.getElementById(id);
-    return el ? parseFloat(el.value) || 0 : 0;
+/**
+ * Converte strings (com vírgula ou ponto) em número float válido
+ */
+function parseNumber(value) {
+    if (typeof value !== 'string') value = String(value || '0');
+    const cleanVal = value.replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(cleanVal);
+    return isNaN(num) ? 0 : num;
 }
 
-// --- Investidor 10 / Web Search Simulation ---
-function fetchInvestidor10Data() {
-    const query = document.getElementById("tickerSearch").value.trim().toUpperCase();
-    if (!query) {
-        alert("Digite um ticker válido.");
-        return;
-    }
+/**
+ * Controla a navegação entre as abas da aplicação
+ */
+function initTabs() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-    const found = loadStockIntoForms(query);
-    if (found) {
-        alert(`Dados de ${query} carregados com sucesso do banco simulado (Investidor 10 / Mercado)!`);
-        runAllModules();
-    } else {
-        const newStock = {
-            ticker: query,
-            cotacao: 25.00,
-            pl: 8.0,
-            pvp: 1.5,
-            roe: 15.0,
-            lucro: 500000000,
-            plInicial: 3000000000,
-            dpaHist: 1.80,
-            payout: 50.0,
-            papeis: 200000000,
-            receita: 2000000000,
-            valorMercado: 5000000000
-        };
-        stockDatabase.push(newStock);
-        loadStockIntoForms(query);
-        alert(`Ticker ${query} não estava na base local. Adicionado com dados padrão para edição!`);
-        runAllModules();
-    }
-}
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
 
-// --- MODULE 1: BAZIN ---
-function calcBazin() {
-    const dpa = getNum("bazin-dpa");
-    const cotacao = getNum("bazin-cotacao");
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
 
-    const yields = [0.06, 0.08, 0.10, 0.12, 0.15];
-    const container = document.getElementById("bazinPyramid");
-    container.innerHTML = "";
-
-    yields.forEach(y => {
-        const precoTeto = dpa / y;
-        const isAtrativo = cotacao <= precoTeto;
-        const tierClass = `tier-${Math.round(y * 100)}`;
-        const highlight = isAtrativo ? "highlight" : "";
-
-        container.innerHTML += `
-            <div class="pyramid-tier ${tierClass} ${highlight}">
-                <span>${(y * 100)}% (DPA / ${(y * 100)}%)</span>
-                <span>R$ ${precoTeto.toFixed(2)} ${isAtrativo ? '✅ (Atrativo)' : '❌ (Acima do Teto)'}</span>
-            </div>
-        `;
-    });
-}
-
-// --- MODULE 2: DY PROJETIVO ---
-function calcDyProj() {
-    const lucro = getNum("dy-lucro");
-    const papeis = getNum("dy-papeis");
-    const payout = getNum("dy-payout") / 100;
-    const cotacao = getNum("dy-cotacao");
-
-    const lpa = papeis > 0 ? lucro / papeis : 0;
-    const dpa = lpa * payout;
-
-    const resultsDiv = document.getElementById("dyProjResults");
-    resultsDiv.innerHTML = `
-        <div class="metric-row"><span>LPA Projetado:</span><strong>R$ ${lpa.toFixed(2)}</strong></div>
-        <div class="metric-row"><span>DPA Projetado:</span><strong>R$ ${dpa.toFixed(2)}</strong></div>
-        <div class="metric-row"><span>Cotação Atual:</span><strong>R$ ${cotacao.toFixed(2)}</strong></div>
-    `;
-
-    const yields = [0.06, 0.08, 0.10, 0.12, 0.15];
-    const container = document.getElementById("dyPyramid");
-    container.innerHTML = "";
-
-    yields.forEach(y => {
-        const precoTeto = dpa / y;
-        const isAtrativo = cotacao <= precoTeto;
-        const tierClass = `tier-${Math.round(y * 100)}`;
-        const highlight = isAtrativo ? "highlight" : "";
-
-        container.innerHTML += `
-            <div class="pyramid-tier ${tierClass} ${highlight}">
-                <span>${(y * 100)}% Retorno</span>
-                <span>R$ ${precoTeto.toFixed(2)} ${isAtrativo ? '✅' : '❌'}</span>
-            </div>
-        `;
-    });
-}
-
-// --- MODULE 3: ROE PROJETIVO ---
-function calcRoeProj() {
-    const pli = getNum("roe-pli");
-    const lucro = getNum("roe-lucro");
-    const divs = getNum("roe-divs");
-
-    const plFinal = pli + lucro - divs;
-    const plMedio = (pli + plFinal) / 2;
-    const roeProj = plMedio > 0 ? (lucro / plMedio) * 100 : 0;
-
-    const resDiv = document.getElementById("roeResults");
-    resDiv.innerHTML = `
-        <div class="metric-row"><span>PL Inicial:</span><strong>R$ ${pli.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></div>
-        <div class="metric-row"><span>PL Final Projetado:</span><strong>R$ ${plFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></div>
-        <div class="metric-row"><span>PL Médio Projetado:</span><strong>R$ ${plMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></div>
-        <div class="metric-row"><span>ROE Projetivo:</span><strong style="color: var(--success);">${roeProj.toFixed(2)}%</strong></div>
-    `;
-
-    return { plFinal, plMedio, roeProj };
-}
-
-// --- MODULE 4: PEG RATIO ---
-function calcPegRatio() {
-    const pl = getNum("peg-pl");
-    const payout = getNum("peg-payout");
-    const roe = getNum("peg-roe");
-    const receita = getNum("peg-receita");
-    const valorMercado = getNum("peg-valormercado");
-
-    let resHtml = "";
-    if (pl <= 0) {
-        const psr = receita > 0 ? valorMercado / receita : 0;
-        const psrAtrativo = psr < 1.0;
-        resHtml = `
-            <div class="metric-row"><span>Empresa sem Lucro Líquido:</span><strong style="color: var(--warning);">Análise via PSR</strong></div>
-            <div class="metric-row"><span>PSR (Preço / Vendas):</span><strong>${psr.toFixed(2)}</strong></div>
-            <div class="metric-row"><span>Avaliação:</span><strong style="color: ${psrAtrativo ? 'var(--success)' : 'var(--danger)'};">${psrAtrativo ? 'Atrativo (PSR < 1)' : 'Caro (PSR > 1)'}</strong></div>
-        `;
-    } else {
-        const effectivePayout = payout > 1 ? payout / 100 : payout;
-        const effectiveRoe = roe > 1 ? roe / 100 : roe;
-        
-        const denominador = (1 - effectivePayout) * effectiveRoe;
-        const peg = denominador !== 0 ? pl / (denominador * 100) : 0;
-
-        let interpretacao = "";
-        let cor = "var(--text-primary)";
-        if (peg < 1) { interpretacao = "Muito Barato (Excelente)", cor = "var(--success)"; }
-        else if (peg <= 2) { interpretacao = "Valor Bom (Justo)", cor = "var(--accent)"; }
-        else if (peg <= 3) { interpretacao = "Cara", cor = "var(--warning)"; }
-        else { interpretacao = "Sobrevalorizada (Risco Alto)", cor = "var(--danger)"; }
-
-        resHtml = `
-            <div class="metric-row"><span>P/L:</span><strong>${pl.toFixed(2)}</strong></div>
-            <div class="metric-row"><span>Retenção (1 - Payout):</span><strong>${((1 - effectivePayout) * 100).toFixed(1)}%</strong></div>
-            <div class="metric-row"><span>ROE:</span><strong>${roe.toFixed(1)}%</strong></div>
-            <div class="metric-row"><span>PEG Ratio Calculado:</span><strong style="font-size: 18px; color: ${cor};">${peg.toFixed(2)}</strong></div>
-            <div class="metric-row"><span>Interpretação:</span><strong style="color: ${cor};">${interpretacao}</strong></div>
-        `;
-    }
-
-    document.getElementById("pegResults").innerHTML = resHtml;
-}
-
-// --- MODULE 5: LONG TERM PROJECTION (15 YEARS) ---
-function calcLongTerm() {
-    let pli = getNum("lt-pli");
-    let lucro = getNum("lt-lucro");
-    const roe = getNum("lt-roe") / 100;
-    const pvp = getNum("lt-pvp");
-    const papeis = getNum("lt-papeis");
-    const payout = getNum("lt-payout") / 100;
-
-    const tbody = document.querySelector("#longTermTable tbody");
-    tbody.innerHTML = "";
-
-    const anosLabels = [];
-    const lucrosData = [];
-    const plsData = [];
-
-    for (let ano = 1; ano <= 15; ano++) {
-        const lucroAno = pli * roe;
-        const patrimonioRetido = lucroAno * (1 - payout);
-        const plFinal = pli + patrimonioRetido;
-        const lpa = papeis > 0 ? lucroAno / papeis : 0;
-        const dpa = lpa * payout;
-        const roeEq = pvp > 0 ? (roe * 100) / pvp : 0;
-
-        anosLabels.push(`Ano ${ano}`);
-        lucrosData.push(lucroAno);
-        plsData.push(plFinal);
-
-        tbody.innerHTML += `
-            <tr>
-                <td>Ano ${ano}</td>
-                <td>R$ ${lucroAno.toLocaleString('pt-BR', {maximumFractionDigits: 0})}</td>
-                <td>R$ ${patrimônioRetido ? patrimonioRetido.toLocaleString('pt-BR', {maximumFractionDigits: 0}) : 0}</td>
-                <td>R$ ${plFinal.toLocaleString('pt-BR', {maximumFractionDigits: 0})}</td>
-                <td>R$ ${lpa.toFixed(2)}</td>
-                <td>R$ ${dpa.toFixed(2)}</td>
-                <td>${roeEq.toFixed(2)}%</td>
-            </tr>
-        `;
-
-        pli = plFinal;
-    }
-
-    renderChart(anosLabels, lucrosData, plsData);
-}
-
-function renderChart(labels, lucros, pls) {
-    const ctx = document.getElementById("longTermChart").getContext("2d");
-    if (currentChart) {
-        currentChart.destroy();
-    }
-
-    currentChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Patrimônio Líquido (PL) (R$)',
-                    data: pls,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.2
-                },
-                {
-                    label: 'Lucro Líquido do Ano (R$)',
-                    data: lucros,
-                    borderColor: '#22c55e',
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    fill: true,
-                    tension: 0.2
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top', labels: { color: '#f8fafc' } }
-            },
-            scales: {
-                x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+            button.classList.add('active');
+            const activeSection = document.getElementById(targetTab);
+            if (activeSection) {
+                activeSection.classList.add('active');
             }
-        }
+        });
     });
 }
 
-// --- RUN ALL MODULES (VISÃO INTEGRADA) ---
-function runAllModules() {
-    const ticker = document.getElementById("int-ticker").value;
-    const cotacao = getNum("int-cotacao");
-    const pl = getNum("int-pl");
-    const lucro = getNum("int-lucro");
-    const dpaHist = getNum("int-dpa-hist");
-    const payout = getNum("int-payout");
-    const papeis = getNum("int-papeis");
-    const plMultiplo = getNum("int-pl-multiplo");
-    const pvp = getNum("int-pvp");
-    const roe = getNum("int-roe");
+/**
+ * Simula a busca automática de cotação ao digitar o Ticker
+ */
+function setupTickerLookup(tickerInputId, statusId, priceInputId) {
+    const tickerInput = document.getElementById(tickerInputId);
+    const statusMsg = document.getElementById(statusId);
+    const priceInput = document.getElementById(priceInputId);
 
-    setVal("bazin-dpa", dpaHist);
-    setVal("bazin-cotacao", cotacao);
+    if (!tickerInput || !priceInput) return;
 
-    setVal("dy-lucro", lucro);
-    setVal("dy-papeis", papeis);
-    setVal("dy-payout", payout);
-    setVal("dy-cotacao", cotacao);
+    let timeout = null;
+    tickerInput.addEventListener('input', () => {
+        const ticker = tickerInput.value.trim().toUpperCase();
+        if (ticker.length < 3) {
+            if (statusMsg) statusMsg.textContent = '';
+            return;
+        }
 
-    setVal("roe-pli", pl);
-    setVal("roe-lucro", lucro);
-    setVal("roe-divs", lucro * (payout / 100));
+        if (statusMsg) statusMsg.textContent = `Buscando cotação de ${ticker}... (modo simulado)`;
 
-    setVal("peg-pl", plMultiplo);
-    setVal("peg-payout", payout);
-    setVal("peg-roe", roe);
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            let simulatedPrice = 15.00;
+            for (let i = 0; i < ticker.length; i++) {
+                simulatedPrice += ticker.charCodeAt(i);
+            }
+            simulatedPrice = (simulatedPrice % 80 + 10).toFixed(2);
 
-    setVal("lt-pli", pl);
-    setVal("lt-lucro", lucro);
-    setVal("lt-roe", roe);
-    setVal("lt-pvp", pvp);
-    setVal("lt-papeis", papeis);
-    setVal("lt-payout", payout);
+            priceInput.value = simulatedPrice;
+            priceInput.dispatchEvent(new Event('input'));
+
+            if (statusMsg) statusMsg.textContent = `Cotação simulada carregada para ${ticker}!`;
+            setTimeout(() => { if (statusMsg) statusMsg.textContent = ''; }, 3000);
+        }, 800);
+    });
+}
+
+/**
+ * Módulo 1: Valuation Preço Teto de Bazin
+ */
+function initBazinModule() {
+    setupTickerLookup('bazin-ticker', 'bazin-ticker-status', 'bazin-preco');
+
+    const dpaListContainer = document.getElementById('bazin-dpa-list');
+    const addDpaBtn = document.getElementById('bazin-add-dpa');
+    const precoInput = document.getElementById('bazin-preco');
+    const dySelect = document.getElementById('bazin-dy');
+
+    // DPAs iniciais de exemplo
+    addDpaInputField(1.50);
+    addDpaInputField(1.80);
+    addDpaInputField(2.10);
+
+    addDpaBtn.addEventListener('click', () => {
+        addDpaInputField();
+        calcBazin();
+    });
+
+    precoInput.addEventListener('input', calcBazin);
+    dySelect.addEventListener('change', calcBazin);
+
+    function addDpaInputField(defaultValue = '') {
+        const wrap = document.createElement('div');
+        wrap.className = 'dpa-item-wrap';
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = '0.01';
+        input.value = defaultValue;
+        input.placeholder = 'R$ DPA';
+        input.addEventListener('input', calcBazin);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-remove-dpa';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Remover DPA';
+        removeBtn.addEventListener('click', () => {
+            wrap.remove();
+            calcBazin();
+        });
+
+        wrap.appendChild(input);
+        wrap.appendChild(removeBtn);
+        dpaListContainer.appendChild(wrap);
+        calcBazin();
+    }
+
+    function calcBazin() {
+        const dpaInputs = dpaListContainer.querySelectorAll('input');
+        let somaDpa = 0;
+        let countDpa = 0;
+
+        dpaInputs.forEach(inp => {
+            const val = parseNumber(inp.value);
+            if (!isNaN(val)) {
+                somaDpa += val;
+                countDpa++;
+            }
+        });
+
+        // DPA médio = soma(DPAs) / quantidade
+        const dpaMedio = countDpa > 0 ? somaDpa / countDpa : 0;
+        const dyMinimo = parseNumber(dySelect.value);
+        const precoAtual = parseNumber(precoInput.value);
+
+        // Preço Teto = DPA médio / DY mínimo escolhido
+        const precoTeto = dyMinimo > 0 ? dpaMedio / dyMinimo : 0;
+
+        // Margem de segurança = (Preço Teto - Cotação) / Preço Teto × 100
+        let margemSeguranca = 0;
+        if (precoTeto > 0) {
+            margemSeguranca = ((precoTeto - precoAtual) / precoTeto) * 100;
+        }
+
+        document.getElementById('res-bazin-dpa-medio').textContent = formatBRL(dpaMedio);
+        document.getElementById('res-bazin-preco-teto').textContent = formatBRL(precoTeto);
+        document.getElementById('res-bazin-margem').textContent = margemSeguranca.toFixed(2).replace('.', ',') + '%';
+
+        const statusBadge = document.getElementById('res-bazin-status');
+        if (precoAtual <= 0 || precoTeto <= 0) {
+            statusBadge.className = 'badge info';
+            statusBadge.textContent = 'Insira cotação e DPAs válidos';
+        } else if (precoAtual < precoTeto) {
+            statusBadge.className = 'badge success';
+            statusBadge.textContent = `Oportunidade! Cotação abaixo do Preço Teto (Margem: ${margemSeguranca.toFixed(1)}%)`;
+        } else {
+            statusBadge.className = 'badge danger';
+            statusBadge.textContent = 'Ação Cara! Cotação acima do Preço Teto de Bazin';
+        }
+    }
 
     calcBazin();
-    calcDyProj();
-    const roeRes = calcRoeProj();
-    calcPegRatio();
-    calcLongTerm();
-
-    const bazinTeto6 = dpaHist / 0.06;
-    const bazinTeto10 = dpaHist / 0.10;
-    const summaryDiv = document.getElementById("integratedSummary");
-
-    summaryDiv.innerHTML = `
-        <div class="metric-row"><span>Ticker Analisado:</span><strong>${ticker}</strong></div>
-        <div class="metric-row"><span>Cotação Atual:</span><strong>R$ ${cotacao.toFixed(2)}</strong></div>
-        <div class="metric-row"><span>Preço Teto Bazin (6%):</span><strong style="color: var(--success);">R$ ${bazinTeto6.toFixed(2)}</strong></div>
-        <div class="metric-row"><span>Preço Teto Bazin (10%):</span><strong style="color: var(--warning);">R$ ${bazinTeto10.toFixed(2)}</strong></div>
-        <div class="metric-row"><span>ROE Projetivo:</span><strong style="color: var(--success);">${roeRes.roeProj.toFixed(2)}%</strong></div>
-        <div class="metric-row"><span>Status Geral:</span><strong style="color: ${cotacao <= bazinTeto10 ? 'var(--success)' : 'var(--danger)'};">${cotacao <= bazinTeto10 ? 'Excelente Oportunidade (Abaixo do Teto)' : 'Atenção / Acima do Preço Teto'}</strong></div>
-    `;
 }
 
-// --- IMPORT & EXPORT JSON / EXCEL ---
-function exportToJson() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(stockDatabase, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", "acoes_valuation_portfolio.json");
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-}
+/**
+ * Módulo 2: Valuation com DY Projetivo
+ */
+function initDyProjetivoModule() {
+    setupTickerLookup('dyp-ticker', 'dyp-ticker-status', 'dyp-preco');
 
-function importFromJson(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+    const precoInput = document.getElementById('dyp-preco');
+    const payoutInput = document.getElementById('dyp-payout');
+    const lucroInput = document.getElementById('dyp-lucro');
+    const acoesInput = document.getElementById('dyp-acoes');
+    const dyMinSelect = document.getElementById('dyp-dy-min');
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const importedData = JSON.parse(e.target.result);
-            if (Array.isArray(importedData)) {
-                importedData.forEach(importedStock => {
-                    const index = stockDatabase.findIndex(s => s.ticker.toUpperCase() === importedStock.ticker.toUpperCase());
-                    if (index >= 0) {
-                        stockDatabase[index] = importedStock;
-                    } else {
-                        stockDatabase.push(importedStock);
-                    }
-                });
-                alert(`JSON importado com sucesso! ${importedData.length} ações integradas. Novas ações foram somadas à base.`);
-                loadStockIntoForms(importedData[0].ticker);
-                runAllModules();
-            } else {
-                alert("Formato de JSON inválido. Deve ser um array de objetos.");
-            }
-        } catch (err) {
-            alert("Erro ao ler o arquivo JSON: " + err.message);
+    [precoInput, payoutInput, lucroInput, acoesInput, dyMinSelect].forEach(inp => {
+        inp.addEventListener('input', calcDyProjetivo);
+    });
+    dyMinSelect.addEventListener('change', calcDyProjetivo);
+
+    function calcDyProjetivo() {
+        const preco = parseNumber(precoInput.value);
+        const payout = parseNumber(payoutInput.value) / 100;
+        const lucro = parseNumber(lucroInput.value);
+        const acoes = parseNumber(acoesInput.value);
+        const dyMin = parseNumber(dyMinSelect.value);
+
+        // LPA = Lucro Líquido Projetivo / Nº de papéis
+        const lpa = acoes > 0 ? lucro / acoes : 0;
+        
+        // DPA = LPA × Payout
+        const dpa = lpa * payout;
+
+        // DY (12m) = DPA / Cotação × 100
+        const dyProjetado = preco > 0 ? (dpa / preco) : 0;
+
+        // Preço Teto = DPA / DY mínimo
+        const precoTeto = dyMin > 0 ? dpa / dyMin : 0;
+
+        document.getElementById('res-dyp-lpa').textContent = formatBRL(lpa);
+        document.getElementById('res-dyp-dpa').textContent = formatBRL(dpa);
+        document.getElementById('res-dyp-dy').textContent = formatPercent(dyProjetado);
+        document.getElementById('res-dyp-preco-teto').textContent = formatBRL(precoTeto);
+
+        const badge = document.getElementById('res-dyp-status');
+        if (preco <= 0 || precoTeto <= 0) {
+            badge.className = 'badge info';
+            badge.textContent = 'Preencha todos os campos corretamente';
+        } else if (preco <= precoTeto) {
+            badge.className = 'badge success';
+            badge.textContent = 'Ação Atrativa pelo DY Projetivo';
+        } else {
+            badge.className = 'badge danger';
+            badge.textContent = 'Ação Esticada em relação ao DY Projetado';
         }
-    };
-    reader.readAsText(file);
+    }
+
+    calcDyProjetivo();
 }
 
-function exportToExcel() {
-    const table = document.getElementById("longTermTable");
-    const wb = XLSX.utils.table_to_book(table, {sheet: "Projeção 15 Anos"});
-    XLSX.writeFile(wb, "Projecao_Valuation_15Anos.xlsx");
+/**
+ * Módulo 3: Análise de PEG Ratio
+ */
+function initPegModule() {
+    const plInput = document.getElementById('peg-pl');
+    const payoutInput = document.getElementById('peg-payout');
+    const roeInput = document.getElementById('peg-roe');
+
+    [plInput, payoutInput, roeInput].forEach(inp => inp.addEventListener('input', calcPegRatio));
+
+    function calcPegRatio() {
+        const pl = parseNumber(plInput.value);
+        const payout = parseNumber(payoutInput.value) / 100;
+        const roe = parseNumber(roeInput.value) / 100;
+
+        // Fórmula: PEG = (P/L / (1 - Payout)) × ROE
+        let denominador = 1 - payout;
+        if (denominador <= 0) denominador = 0.01;
+
+        const peg = (pl / denominador) * roe;
+
+        document.getElementById('res-peg-val').textContent = isNaN(peg) || !isFinite(peg) ? '0.00' : peg.toFixed(2).replace('.', ',');
+
+        const classBadge = document.getElementById('res-peg-class');
+        if (isNaN(peg) || !isFinite(peg)) {
+            classBadge.className = 'badge info';
+            classBadge.textContent = 'Aguardando dados...';
+            return;
+        }
+
+        // Classificação semântica por cores
+        if (peg < 1) {
+            classBadge.className = 'badge success';
+            classBadge.textContent = 'Muito Barato (< 1) - Verde';
+        } else if (peg >= 1 && peg <= 2) {
+            classBadge.className = 'badge info';
+            classBadge.textContent = 'Valor Bom (1 a 2) - Azul';
+        } else if (peg > 2 && peg <= 3) {
+            classBadge.className = 'badge warning';
+            classBadge.textContent = 'Caro (2 a 3) - Laranja';
+        } else {
+            classBadge.className = 'badge danger';
+            classBadge.textContent = 'Sobrevalorizado (> 3) - Vermelho';
+        }
+    }
+
+    calcPegRatio();
+}
+
+/**
+ * Módulo 4: ROE Projetivo
+ */
+function initRoeProjModule() {
+    const lucroInput = document.getElementById('roej-lucro');
+    const plInicialInput = document.getElementById('roej-pl-inicial');
+    const divInput = document.getElementById('roej-div');
+
+    [lucroInput, plInicialInput, divInput].forEach(inp => inp.addEventListener('input', calcRoeProjetivo));
+
+    function calcRoeProjetivo() {
+        const lucro = parseNumber(lucroInput.value);
+        const plInicial = parseNumber(plInicialInput.value);
+        const dividendos = parseNumber(divInput.value);
+
+        // PL Final = PL Inicial + Lucro Projetado - Dividendos
+        const plFinal = plInicial + lucro - dividendos;
+
+        // PL Médio = (PL Inicial + PL Final) / 2
+        const plMedio = (plInicial + plFinal) / 2;
+
+        // ROE Projetivo = Lucro Projetado / PL Médio × 100
+        const roeProjetivo = plMedio > 0 ? (lucro / plMedio) : 0;
+
+        document.getElementById('res-roej-pl-final').textContent = formatBRL(plFinal);
+        document.getElementById('res-roej-pl-medio').textContent = formatBRL(plMedio);
+        document.getElementById('res-roej-val').textContent = formatPercent(roeProjetivo);
+
+        // Passo a passo descritivo
+        const stepText = `Passo a Passo do Cálculo:
+1. PL Final: PL Inicial (${formatBRL(plInicial)}) + Lucro (${formatBRL(lucro)}) - Dividendos (${formatBRL(dividendos)}) = ${formatBRL(plFinal)}
+2. PL Médio: (PL Inicial + PL Final) / 2 = (${formatBRL(plInicial)} + ${formatBRL(plFinal)}) / 2 = ${formatBRL(plMedio)}
+3. ROE Projetivo: (Lucro Projetado / PL Médio) × 100 = (${formatBRL(lucro)} / ${formatBRL(plMedio)}) × 100 = ${(roeProjetivo * 100).toFixed(2)}%`;
+
+        document.getElementById('roej-step-by-step').textContent = stepText;
+    }
+
+    calcRoeProjetivo();
+}
+
+/**
+ * Módulo 5: ROE Equivalente (15 anos)
+ */
+function initRoeEqModule() {
+    const roeInput = document.getElementById('roee-roe');
+    const pvpInput = document.getElementById('roee-pvp');
+    const acoesInput = document.getElementById('roee-acoes');
+    const lucroInput = document.getElementById('roee-lucro');
+    const plInput = document.getElementById('roee-pl');
+    const payoutInput = document.getElementById('roee-payout');
+
+    [roeInput, pvpInput, acoesInput, lucroInput, plInput, payoutInput].forEach(inp => {
+        inp.addEventListener('input', calcRoeEquivalente);
+    });
+
+    function calcRoeEquivalente() {
+        const roe = parseNumber(roeInput.value) / 100;
+        const pvp = parseNumber(pvpInput.value);
+        const acoes = parseNumber(acoesInput.value);
+        let lucro = parseNumber(lucroInput.value);
+        let pl = parseNumber(plInput.value);
+        const payout = parseNumber(payoutInput.value) / 100;
+
+        // ROE Equivalente = ROE / P/VP
+        const roeEq = pvp > 0 ? roe / pvp : 0;
+
+        // Patrimônio Retido = 1 - Payout
+        const retido = 1 - payout;
+
+        // LPA = Lucro / Nº de papéis
+        const lpa = acoes > 0 ? lucro / acoes : 0;
+
+        // DPA = LPA × Payout
+        const dpa = lpa * payout;
+
+        document.getElementById('res-roee-equivalente').textContent = formatPercent(roeEq);
+        document.getElementById('res-roee-retido').textContent = formatPercent(retido);
+        document.getElementById('res-roee-lpa').textContent = formatBRL(lpa);
+        document.getElementById('res-roee-dpa').textContent = formatBRL(dpa);
+
+        // Renderizar Tabela de 15 Anos
+        const tbody = document.querySelector('#roee-table tbody');
+        tbody.innerHTML = '';
+
+        let currentPL = pl;
+        let currentLucro = lucro;
+        let acumDiv = 0;
+
+        if (currentPL <= 0 && currentLucro > 0) {
+            currentPL = currentLucro * 5; 
+        }
+
+        for (let ano = 1; ano <= 15; ano++) {
+            if (ano > 1) {
+                currentLucro = currentPL * roeEq;
+            }
+
+            const divAno = currentLucro * payout;
+            const dpaAno = acoes > 0 ? divAno / acoes : 0;
+            const lucroRetidoAno = currentLucro * retido;
+
+            acumDiv += divAno;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>Ano ${ano}</td>
+                <td>${formatBRL(currentPL)}</td>
+                <td>${formatBRL(currentLucro)}</td>
+                <td>${formatBRL(divAno)}</td>
+                <td>${formatBRL(dpaAno)}</td>
+                <td><strong>${formatBRL(acumDiv)}</strong></td>
+            `;
+            tbody.appendChild(tr);
+
+            currentPL += lucroRetidoAno;
+        }
+    }
+
+    calcRoeEquivalente();
 }
