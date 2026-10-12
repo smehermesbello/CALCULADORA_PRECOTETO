@@ -75,11 +75,18 @@ const N = v => parseFloat(v) || 0;
 /* Campos com números grandes/dinheiro: texto formatado em pt-BR (1.234.567,89) */
 const NUM_IDS = ['n_papeis', 'cotacao', 'patrimonio_atual', 'dpa_hist', 'lucro_atual', 'lucro_proj', 'patrimonio_proj', 'lpa_atual', 'lpa_proj', 'vpa_atual', 'vpa_proj', 'dpa_proj'];
 const INT_IDS = ['n_papeis'];
+// Abreviações aceitas nos campos grandes: "1,2 bi" → 1.200.000.000 | "350 mi" → 350.000.000 | "80 mil" → 80.000
+const UNITS = { mil: 1e3, k: 1e3, m: 1e6, mm: 1e6, mi: 1e6, milhao: 1e6, milhoes: 1e6, b: 1e9, bi: 1e9, bilhao: 1e9, bilhoes: 1e9, t: 1e12, tri: 1e12, trilhao: 1e12, trilhoes: 1e12 };
+const BIG_IDS = ['n_papeis', 'patrimonio_atual', 'lucro_atual', 'lucro_proj'];
 const parseBR = s => {
-    s = String(s).trim();
-    if (s === '' || s === '-') return '';
-    const v = parseFloat(s.replace(/\./g, '').replace(',', '.'));
-    return isNaN(v) ? '' : String(v);
+    s = String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+    const m = s.match(/^(-?[\d.,]+)([a-z]+)?$/);
+    if (!m) return '';
+    let num = m[1], mult = 1;
+    if (m[2]) { mult = UNITS[m[2]]; if (!mult) return ''; }
+    if (m[2] && !num.includes(',') && /^-?\d+\.\d{1,2}$/.test(num)) num = num.replace('.', ','); // "1.2 bi" = 1,2 bi
+    const v = parseFloat(num.replace(/\./g, '').replace(',', '.')) * mult;
+    return isNaN(v) ? '' : String(Math.round(v * 100) / 100);
 };
 const fmtField = (id, v) => {
     v = parseFloat(v);
@@ -88,6 +95,7 @@ const fmtField = (id, v) => {
     return v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
 };
 function liveFmt(el) {
+    if (/[a-zA-Z]/.test(el.value)) return; // digitando abreviação (ex.: 1,2 bi); expande ao sair do campo
     const neg = el.value.trim().startsWith('-');
     const keep = el.value.slice(0, el.selectionStart).replace(/[^\d,]/g, '').length;
     const raw = el.value.replace(/[^\d,]/g, '');
@@ -107,6 +115,8 @@ function initNumFields() {
         const el = document.getElementById(id);
         if (!el) return;
         el.type = 'text'; el.inputMode = 'decimal'; el.removeAttribute('step'); el.classList.add('num');
+        if (BIG_IDS.includes(id)) el.placeholder = 'ex.: 1.200.000.000 ou 1,2 bi';
+        el.addEventListener('keydown', e => { if (e.key === 'Enter') el.blur(); });
         el.addEventListener('input', () => liveFmt(el));
         el.addEventListener('blur', () => { const p = parseBR(el.value); el.value = p === '' ? '' : fmtField(id, p); });
     });
