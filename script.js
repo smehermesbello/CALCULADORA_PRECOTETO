@@ -15,10 +15,34 @@ function autoCalc() {
     const n = getV('n_papeis');
     const pat_a = getV('patrimonio_atual');
     const pat_p = getV('patrimonio_proj');
-    const luc_a = getV('lucro_atual');
-    const luc_p = getV('lucro_proj');
+    const roe_norm = getV('roe_norm');
     const pay = getV('payout');
+    const cagr = getV('cagr');
+    const gType = document.getElementById('growth_type').value;
 
+    // 1. Calcular Lucro Líquido Atual = PL * ROE Normalizado
+    if (pat_a > 0 && roe_norm > 0) {
+        setV('lucro_atual', pat_a * (roe_norm / 100));
+    }
+    
+    const luc_a = getV('lucro_atual');
+
+    // 2. Calcular SGR (Taxa de Retenção) = ROE Norm * (1 - Payout)
+    if (roe_norm > 0 && pay >= 0) {
+        const ret_ratio = 1 - (pay / 100);
+        setV('sgr', roe_norm * ret_ratio);
+    }
+    const sgr = getV('sgr');
+
+    // 3. Calcular Lucro Projetado = Lucro Atual * (1 + Crescimento)
+    const g = gType === 'cagr' ? cagr : sgr;
+    if (luc_a > 0 && g > 0) {
+        setV('lucro_proj', luc_a * (1 + (g / 100)));
+    }
+    
+    const luc_p = getV('lucro_proj');
+
+    // 4. Calcular Métricas por Ação (LPA e VPA)
     if(n > 0) {
         if(luc_a > 0) setV('lpa_atual', luc_a / n);
         if(luc_p > 0) setV('lpa_proj', luc_p / n);
@@ -27,21 +51,18 @@ function autoCalc() {
     }
     
     const lpa_a = getV('lpa_atual');
+    
+    // 5. P/L Atual
     if(cot > 0 && lpa_a > 0) setV('pl_atual', cot / lpa_a);
     
+    // 6. ROE Calculado Real (para conferência)
     if(pat_a > 0 && luc_a > 0) setV('roe_atual', (luc_a / pat_a) * 100);
     if(pat_p > 0 && luc_p > 0) setV('roe_proj', (luc_p / pat_p) * 100);
     
+    // 7. DPA Projetivo
     const lpa_p = getV('lpa_proj');
     if(lpa_p > 0 && pay > 0) {
         setV('dpa_proj', lpa_p * (pay / 100));
-    }
-
-    const roe_p = getV('roe_proj');
-    if(roe_p > 0 && pay >= 0) {
-        // SGR = (1 - Payout) * ROE
-        const ret_ratio = 1 - (pay / 100);
-        setV('sgr', ret_ratio * roe_p);
     }
 }
 
@@ -148,9 +169,8 @@ function renderPyramids() {
 }
 
 function exportJSON() {
-    // Gather all inputs
     let inputs = {};
-    document.querySelectorAll('input').forEach(i => {
+    document.querySelectorAll('input, select').forEach(i => {
         if(i.id && i.id !== 'import-json') inputs[i.id] = i.value;
     });
     const finalData = { inputs, results: vData };
@@ -184,7 +204,6 @@ function exportExcel() {
     if(!vData.bazin_h) return alert("Calcule primeiro!");
     const wb = XLSX.utils.book_new();
     
-    // Resumo
     const ws1 = XLSX.utils.aoa_to_sheet([
         ["Métrica", "Valor", "Classificação"],
         ["PEG Ratio", vData.peg, vData.pegBadge.text],
@@ -193,7 +212,6 @@ function exportExcel() {
         ["Preço Justo (P/L Hist.)", "R$ " + vData.val_pl.toFixed(2), ""]
     ]);
     
-    // Bazin
     let bData = [["Yield Alvo (%)", "Preço Teto Histórico (R$)", "Preço Teto Projetivo (R$)"]];
     for(let i=0; i<vData.bazin_h.length; i++) {
         bData.push([
