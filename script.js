@@ -63,6 +63,46 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
 
 /* ---------- Utilitários ---------- */
 const N = v => parseFloat(v) || 0;
+
+/* Campos com números grandes/dinheiro: texto formatado em pt-BR (1.234.567,89) */
+const NUM_IDS = ['n_papeis', 'cotacao', 'patrimonio_atual', 'dpa_hist', 'lucro_atual', 'lucro_proj', 'patrimonio_proj', 'lpa_atual', 'lpa_proj', 'vpa_atual', 'vpa_proj', 'dpa_proj'];
+const INT_IDS = ['n_papeis'];
+const parseBR = s => {
+    s = String(s).trim();
+    if (s === '' || s === '-') return '';
+    const v = parseFloat(s.replace(/\./g, '').replace(',', '.'));
+    return isNaN(v) ? '' : String(v);
+};
+const fmtField = (id, v) => {
+    v = parseFloat(v);
+    if (isNaN(v)) return '';
+    const d = INT_IDS.includes(id) ? 0 : 2;
+    return v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+};
+function liveFmt(el) {
+    const neg = el.value.trim().startsWith('-');
+    const keep = el.value.slice(0, el.selectionStart).replace(/[^\d,]/g, '').length;
+    const raw = el.value.replace(/[^\d,]/g, '');
+    const i = raw.indexOf(',');
+    const allowDec = !INT_IDS.includes(el.id);
+    let int = (i < 0 ? raw : raw.slice(0, i)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    let out = int;
+    if (i >= 0 && allowDec) out += ',' + raw.slice(i + 1).replace(/,/g, '').slice(0, 2);
+    out = (neg ? '-' : '') + out;
+    el.value = out;
+    let seen = 0, pos = neg ? 1 : 0;
+    while (pos < out.length && seen < keep) { if (/[\d,]/.test(out[pos])) seen++; pos++; }
+    el.setSelectionRange(pos, pos);
+}
+function initNumFields() {
+    NUM_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.type = 'text'; el.inputMode = 'decimal'; el.removeAttribute('step'); el.classList.add('num');
+        el.addEventListener('input', () => liveFmt(el));
+        el.addEventListener('blur', () => { const p = parseBR(el.value); el.value = p === '' ? '' : fmtField(id, p); });
+    });
+}
 const brl = v => v > 0 ? 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
 function toast(msg) {
     const t = document.getElementById('toast');
@@ -75,11 +115,16 @@ function switchTab(id) {
 }
 function readForm() {
     const r = {};
-    document.querySelectorAll('#inputs input, #inputs select, #results input').forEach(i => { if (i.id) r[i.id] = i.value; });
+    document.querySelectorAll('#inputs input, #inputs select, #results input').forEach(i => {
+        if (i.id) r[i.id] = NUM_IDS.includes(i.id) ? parseBR(i.value) : i.value;
+    });
     return r;
 }
 function fillForm(inputs) {
-    Object.keys(inputs).forEach(k => { const el = document.getElementById(k); if (el) el.value = inputs[k]; });
+    Object.keys(inputs).forEach(k => {
+        const el = document.getElementById(k);
+        if (el) el.value = NUM_IDS.includes(k) ? fmtField(k, inputs[k]) : inputs[k];
+    });
 }
 
 /* ---------- Cálculo (função pura: recebe os inputs, devolve tudo) ---------- */
@@ -132,7 +177,7 @@ function autoCalc() {
     const c = compute(readForm());
     Object.keys(c.derived).forEach(id => {
         const el = document.getElementById(id), v = c.derived[id];
-        if (el && document.activeElement !== el) el.value = v ? v.toFixed(2) : '';
+        if (el && document.activeElement !== el) el.value = v ? (NUM_IDS.includes(id) ? fmtField(id, v) : v.toFixed(2)) : '';
     });
     return c;
 }
@@ -328,5 +373,6 @@ function exportPortfolioExcel() {
     buildExcel(portfolio.map(p => p.c), 'Valuation_Carteira.xlsx');
 }
 
+initNumFields();
 addHelp();
 renderPortfolio();
