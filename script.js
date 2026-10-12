@@ -385,7 +385,7 @@ const inputCols = () => [
 function fillSheet(ws, cols, list, legend) {
     const side = { style: 'thin', color: { argb: 'FFD9DFD6' } }, border = { top: side, bottom: side, left: side, right: side };
     const mid = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    ws.views = [{ state: 'frozen', xSplit: 1, ySplit: 2, showGridLines: false }];
+    ws.views = [{ state: 'frozen', xSplit: 2, ySplit: 2, showGridLines: false }];
     cols.forEach((c, i) => {
         ws.getColumn(i + 1).width = c.w || 17;
         [ws.getCell(1, i + 1), ws.getCell(2, i + 1)].forEach((x, j) => {
