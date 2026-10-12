@@ -129,3 +129,18 @@ td button.del { color: var(--red); }
     .tab-btn { padding: .6rem .9rem; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Caixa de Payback */
+.payback { background: var(--ink); border-color: var(--ink); color: #f3f6f1; border-top: 4px solid var(--gold); }
+.payback h3 { color: #f3f6f1; margin-bottom: .2rem; }
+.payback .muted, .pb-tile .sub { color: #a9bdb2; }
+.pb-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.pb-head .input-group { width: 180px; }
+.pb-head label { color: #cfe0d6; }
+.pb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .9rem; }
+.pb-tile { background: #1f3129; border: 1px solid #33473d; border-radius: 12px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .3rem; }
+.pb-tile h4 { font-size: .8rem; font-weight: 600; color: #a9bdb2; display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; }
+.pb-tile .value { font-family: 'Fraunces', Georgia, serif; font-size: 1.55rem; font-weight: 700; color: #fff; line-height: 1.2; }
+.pb-tile .sub { font-size: .76rem; }
+.pb-tile.key { border-color: var(--gold); background: #2a3a2c; }
+.pb-tile.key .value { color: #e3c476; }
