@@ -20,156 +20,111 @@
 
     <main>
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('inputs')">Dados de Entrada</button>
-            <button class="tab-btn" onclick="switchTab('results')">Resultados & Preços Alvo</button>
+            <button class="tab-btn active" onclick="switchTab('inputs')">1. Dados de Entrada</button>
+            <button class="tab-btn" onclick="switchTab('results')">2. Resultados & Preços Alvo</button>
         </div>
 
         <section id="inputs" class="tab-content active">
             <div class="card info-card">
                 <h2>O que você precisa informar:</h2>
-                <p>Preencha os <strong>dados básicos</strong> da empresa. O sistema calculará as métricas derivadas (como Lucro Atual, LPA, VPA e SGR) automaticamente. 
-                <br><small>* Se preencher o ROE Normalizado, o Lucro Líquido será auto-calculado.</small></p>
+                <p>Preencha os <strong>dados básicos</strong> da empresa. O sistema calculará as métricas derivadas automaticamente (como Lucro Atual, Patrimônio Projetado, LPA, VPA e SGR).</p>
             </div>
 
-            <div class="grid-2">
-                <!-- DADOS BÁSICOS -->
+            <div class="stacked-layout">
+                <!-- DADOS BÁSICOS (BLOCO SUPERIOR) -->
                 <div class="card basic-data">
                     <h3>Dados Básicos (Preencha Aqui)</h3>
-                    <div class="input-group">
-                        <label>Ticker da Ação:</label>
-                        <input type="text" id="ticker" placeholder="Ex: VULC3">
-                    </div>
-                    <div class="input-group">
-                        <label>Cotação Atual (R$):</label>
-                        <input type="number" id="cotacao" step="0.01" oninput="autoCalc()">
-                    </div>
-                    <div class="input-group">
-                        <label>Número de Papéis (Ações):</label>
-                        <input type="number" id="n_papeis" step="1" oninput="autoCalc()">
-                    </div>
-                    <div class="input-group">
-                        <label>Patrimônio Líquido Atual (R$):</label>
-                        <input type="number" id="patrimonio_atual" step="0.01" oninput="autoCalc()">
-                    </div>
-                    <div class="input-group">
-                        <label>Patrimônio Líquido Projetado (R$):</label>
-                        <input type="number" id="patrimonio_proj" step="0.01" oninput="autoCalc()">
-                    </div>
-                    
-                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
-
-                    <div class="input-group">
-                        <label>ROE Normalizado (%): <small>(Base para Lucro Atual)</small></label>
-                        <input type="number" id="roe_norm" step="0.01" oninput="autoCalc()">
-                    </div>
-                    <div class="input-group">
-                        <label>Payout Médio Histórico/Normalizado (%):</label>
-                        <input type="number" id="payout" step="0.01" oninput="autoCalc()">
-                    </div>
-                    <div class="input-group">
-                        <label>CAGR Receita/Lucro (5 anos) (%):</label>
-                        <input type="number" id="cagr" step="0.01" oninput="autoCalc()">
-                    </div>
-
-                    <div style="margin-top:15px; margin-bottom: 15px;">
-                        <label style="font-size: 0.9rem; color: #475569; font-weight: 500;"><b>Base de Crescimento (Para Lucro Proj. e PEG):</b></label>
-                        <select id="growth_type" onchange="autoCalc()" style="width:100%; padding:0.6rem; border-radius:6px; margin-top:5px; border: 1px solid #cbd5e1;">
-                            <option value="sgr">SGR (Taxa de Retenção: ROE Norm. x (1 - Payout))</option>
-                            <option value="cagr">CAGR (Histórico)</option>
-                        </select>
-                    </div>
-
-                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
-
-                    <div class="input-group">
-                        <label>DPA Histórico Médio (R$) <small>(Para Bazin Histórico)</small>:</label>
-                        <input type="number" id="dpa_hist" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>P/L Médio Histórico <small>(Múltiplo)</small>:</label>
-                        <input type="number" id="pl_hist" step="0.01">
+                    <div class="grid-inputs">
+                        <div class="input-group"><label>Ticker da Ação:</label><input type="text" id="ticker" placeholder="Ex: VULC3"></div>
+                        <div class="input-group"><label>Cotação Atual (R$):</label><input type="number" id="cotacao" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Número de Papéis (Ações):</label><input type="number" id="n_papeis" step="1" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Patrimônio Líquido Atual (R$):</label><input type="number" id="patrimonio_atual" step="0.01" oninput="autoCalc()"></div>
+                        
+                        <div class="input-group"><label>ROE Normalizado (%):</label><input type="number" id="roe_norm" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Payout Médio Histórico/Norm. (%):</label><input type="number" id="payout" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>CAGR Histórico (5 anos) (%):</label><input type="number" id="cagr" step="0.01" oninput="autoCalc()"></div>
+                        
+                        <div class="input-group">
+                            <label>Base de Crescimento (Para Lucro Proj. e PEG):</label>
+                            <select id="growth_type" onchange="autoCalc()">
+                                <option value="sgr">SGR (ROE Norm. x (1 - Payout))</option>
+                                <option value="cagr">CAGR (Histórico)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group"><label>DPA Histórico Médio (R$):</label><input type="number" id="dpa_hist" step="0.01"></div>
+                        <div class="input-group"><label>P/L Médio Histórico:</label><input type="number" id="pl_hist" step="0.01"></div>
+                        <div class="input-group"><label>Taxa de Juros - Y (%): <small>(Base p/ Risco e Graham Modificado)</small></label><input type="number" id="taxa_y" value="10" step="0.01" oninput="autoCalc()"></div>
+                        
+                        <!-- Constantes Graham -->
+                        <div class="input-group"><label>Graham - P/L Máx. Aceitável (6 a 15):</label><input type="number" id="graham_pl" value="15" step="0.1" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Graham - P/VP Máx. Aceitável:</label><input type="number" id="graham_pvp" value="1.5" step="0.1" oninput="autoCalc()"></div>
                     </div>
                 </div>
 
-                <!-- DADOS DERIVADOS (CALCULADOS) -->
+                <!-- DADOS DERIVADOS (BLOCO INFERIOR) -->
                 <div class="card derived-data">
-                    <h3>Métricas Calculadas <small>(Editáveis)</small></h3>
-                    
-                    <div class="input-group">
-                        <label>Lucro Líquido Atual (R$): <small>(PL x ROE Norm.)</small></label>
-                        <input type="number" id="lucro_atual" step="0.01" oninput="autoCalc()">
-                    </div>
-                    <div class="input-group">
-                        <label>Lucro Líquido Projetivo (R$): <small>(Lucro Atual x (1 + Crescimento))</small></label>
-                        <input type="number" id="lucro_proj" step="0.01" oninput="autoCalc()">
-                    </div>
-                    <div class="input-group">
-                        <label>Crescimento Sustentável (SGR) Projetivo (%):</label>
-                        <input type="number" id="sgr" step="0.01">
-                    </div>
-
-                    <hr style="margin: 15px 0; border: 0; border-top: 1px dashed #cbd5e1;">
-
-                    <div class="input-group">
-                        <label>LPA Atual (R$):</label>
-                        <input type="number" id="lpa_atual" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>LPA Projetivo (R$):</label>
-                        <input type="number" id="lpa_proj" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>VPA Atual (R$):</label>
-                        <input type="number" id="vpa_atual" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>VPA Projetivo (R$):</label>
-                        <input type="number" id="vpa_proj" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>P/L Atual:</label>
-                        <input type="number" id="pl_atual" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>ROE Atual Real (%):</label>
-                        <input type="number" id="roe_atual" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>ROE Projetivo (%):</label>
-                        <input type="number" id="roe_proj" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>DPA Projetivo (R$):</label>
-                        <input type="number" id="dpa_proj" step="0.01">
+                    <h3>Métricas Calculadas <small>(Baseadas nos dados acima)</small></h3>
+                    <div class="grid-inputs">
+                        <div class="input-group"><label>Lucro Líquido Atual (R$): <small>(PL x ROE Norm.)</small></label><input type="number" id="lucro_atual" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Lucro Líquido Projetivo (R$): <small>(L. Atual x (1+Crescimento))</small></label><input type="number" id="lucro_proj" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Crescimento (g) Aplicado (%):</label><input type="number" id="sgr" step="0.01" readonly></div>
+                        <div class="input-group"><label>Patrimônio Líq. Projetado (R$): <small>(PL + Lucro Proj * (1-Payout))</small></label><input type="number" id="patrimonio_proj" step="0.01" readonly></div>
+                        
+                        <div class="input-group"><label>LPA Atual (R$):</label><input type="number" id="lpa_atual" step="0.01"></div>
+                        <div class="input-group"><label>LPA Projetivo/Norm. (R$):</label><input type="number" id="lpa_proj" step="0.01"></div>
+                        <div class="input-group"><label>VPA Atual (R$):</label><input type="number" id="vpa_atual" step="0.01"></div>
+                        <div class="input-group"><label>VPA Projetivo (R$):</label><input type="number" id="vpa_proj" step="0.01"></div>
+                        <div class="input-group"><label>P/L Atual:</label><input type="number" id="pl_atual" step="0.01"></div>
+                        <div class="input-group"><label>DPA Projetivo (R$):</label><input type="number" id="dpa_proj" step="0.01"></div>
+                        <div class="input-group"><label>Constante de Graham:</label><input type="number" id="graham_constante" step="0.01" readonly></div>
                     </div>
 
-                    <button class="btn-primary" onclick="calcularTudo()" style="margin-top: 1.5rem; width: 100%; padding: 1rem; font-size: 1.1rem;">Calcular Preços Alvo</button>
+                    <button class="btn-primary" onclick="calcularTudo()" style="margin-top: 1.5rem; width: 100%; padding: 1rem; font-size: 1.1rem;">Gerar Resultados & Preços Alvo</button>
                 </div>
             </div>
         </section>
 
         <section id="results" class="tab-content">
-            <div class="results-header">
-                <h2>Preços Alvo: <span id="res_ticker"></span></h2>
-                <button class="btn-excel" onclick="exportExcel()">Baixar Excel Bonito</button>
+            <div class="results-header" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+                <div style="display:flex; justify-content: space-between; width: 100%; align-items: center;">
+                    <h2>Preços Alvo: <span id="res_ticker" style="color: #3b82f6;"></span></h2>
+                    <button class="btn-excel" onclick="exportExcel()">Baixar Excel Bonito</button>
+                </div>
+                <h3 style="color: #475569; font-size: 1.1rem; margin-top:0.5rem;">Cotação Atual: <b style="color:#1e293b;" id="res_cotacao"></b></h3>
+            </div>
+
+            <!-- Controles Múltiplo Futuro -->
+            <div class="card" style="margin-bottom: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0;">
+                <h3 style="font-size: 1rem; margin-bottom: 0.8rem; border:none; padding:0;">Ajustes de Cenário (Múltiplo Futuro)</h3>
+                <div class="grid-inputs" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="input-group">
+                        <label>Projetar em Anos (Padrão 5):</label>
+                        <input type="number" id="res_anos" value="5" step="1" oninput="calcularTudo()">
+                    </div>
+                    <div class="input-group">
+                        <label>Taxa de Risco de Desconto (%):</label>
+                        <input type="number" id="res_risco" step="0.01" oninput="calcularTudo()">
+                    </div>
+                </div>
             </div>
             
             <div class="results-grid" id="results_container">
                 <!-- Cards Injetados via JS -->
             </div>
             
-            <div class="grid-2" style="margin-top:20px;">
+            <div class="stacked-layout" style="margin-top:20px; flex-direction: row; gap: 1.5rem;">
                 <!-- Pirâmide de Bazin Histórica -->
-                <div class="card">
-                    <h3>Pirâmide de Bazin (Histórica)</h3>
-                    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Baseada no DPA Histórico Médio. Valores representam o Preço Teto para cada DY Alvo.</p>
+                <div class="card" style="flex:1;">
+                    <h3>Bazin - Teto Histórico</h3>
+                    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Baseado no DPA Histórico Médio.</p>
                     <div class="pyramid-container" id="pyramid_hist"></div>
                 </div>
 
                 <!-- Pirâmide de Bazin Projetiva -->
-                <div class="card">
-                    <h3>Pirâmide de Bazin (Projetiva)</h3>
-                    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Baseada no Lucro e Payout Projetivos.</p>
+                <div class="card" style="flex:1;">
+                    <h3>Bazin - Teto Projetivo</h3>
+                    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Baseado no Lucro/Payout Projetivos.</p>
                     <div class="pyramid-container" id="pyramid_proj"></div>
                 </div>
             </div>
