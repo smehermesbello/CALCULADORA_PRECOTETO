@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Valuation e Preço Teto</title>
+    <title>Calculadora de Valuation e Preço Teto Avançada</title>
     <link rel="stylesheet" href="style.css">
-    <!-- SheetJS for Excel Export -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -26,119 +25,137 @@
         </div>
 
         <section id="inputs" class="tab-content active">
-            <div class="card">
+            <div class="card info-card">
                 <h2>O que você precisa informar:</h2>
-                <p>Preencha os dados fundamentalistas da empresa. Você pode inserir valores recentes e normalizados (médias históricas ajustadas) para comparar o cenário atual com o estrutural.</p>
+                <p>Preencha os <strong>dados básicos</strong> da empresa. O sistema calculará as métricas derivadas (como LPA, VPA e ROE) automaticamente. Você poderá alterá-las manualmente se desejar.</p>
             </div>
 
             <div class="grid-2">
-                <!-- Dados Recentes -->
-                <div class="card">
-                    <h3>Dados Atuais / Recentes</h3>
+                <!-- DADOS BÁSICOS -->
+                <div class="card basic-data">
+                    <h3>Dados Básicos (Preencha Aqui)</h3>
                     <div class="input-group">
-                        <label>Preço Atual (R$):</label>
-                        <input type="number" id="preco_atual" step="0.01">
+                        <label>Ticker da Ação:</label>
+                        <input type="text" id="ticker" placeholder="Ex: VULC3">
                     </div>
+                    <div class="input-group">
+                        <label>Cotação Atual (R$):</label>
+                        <input type="number" id="cotacao" step="0.01" oninput="autoCalc()">
+                    </div>
+                    <div class="input-group">
+                        <label>Número de Papéis (Ações):</label>
+                        <input type="number" id="n_papeis" step="1" oninput="autoCalc()">
+                    </div>
+                    <div class="input-group">
+                        <label>Patrimônio Líquido Atual (R$):</label>
+                        <input type="number" id="patrimonio_atual" step="0.01" oninput="autoCalc()">
+                    </div>
+                    <div class="input-group">
+                        <label>Patrimônio Líquido Projetado (R$):</label>
+                        <input type="number" id="patrimonio_proj" step="0.01" oninput="autoCalc()">
+                    </div>
+                    <div class="input-group">
+                        <label>Lucro Líquido Atual (12m) (R$):</label>
+                        <input type="number" id="lucro_atual" step="0.01" oninput="autoCalc()">
+                    </div>
+                    <div class="input-group">
+                        <label>Lucro Líquido Projetivo (R$):</label>
+                        <input type="number" id="lucro_proj" step="0.01" oninput="autoCalc()">
+                    </div>
+                    <div class="input-group">
+                        <label>Payout Médio Histórico/Projetado (%):</label>
+                        <input type="number" id="payout" step="0.01" oninput="autoCalc()">
+                    </div>
+                    <div class="input-group">
+                        <label>DPA Histórico Médio (R$) <small>(Para Bazin Histórico)</small>:</label>
+                        <input type="number" id="dpa_hist" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>P/L Médio Histórico <small>(Múltiplo)</small>:</label>
+                        <input type="number" id="pl_hist" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>CAGR Receita/Lucro (5 anos) (%):</label>
+                        <input type="number" id="cagr" step="0.01">
+                    </div>
+                </div>
+
+                <!-- DADOS DERIVADOS (CALCULADOS) -->
+                <div class="card derived-data">
+                    <h3>Métricas Calculadas <small>(Editáveis)</small></h3>
                     <div class="input-group">
                         <label>LPA Atual (R$):</label>
                         <input type="number" id="lpa_atual" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>LPA Projetivo (R$):</label>
+                        <input type="number" id="lpa_proj" step="0.01">
                     </div>
                     <div class="input-group">
                         <label>VPA Atual (R$):</label>
                         <input type="number" id="vpa_atual" step="0.01">
                     </div>
                     <div class="input-group">
+                        <label>VPA Projetivo (R$):</label>
+                        <input type="number" id="vpa_proj" step="0.01">
+                    </div>
+                    <div class="input-group">
                         <label>P/L Atual:</label>
                         <input type="number" id="pl_atual" step="0.01">
                     </div>
                     <div class="input-group">
-                        <label>DPA Atual (R$):</label>
-                        <input type="number" id="dpa_atual" step="0.01">
-                    </div>
-                </div>
-
-                <!-- Dados Normalizados / Históricos -->
-                <div class="card">
-                    <h3>Dados Normalizados / Projetivos</h3>
-                    <div class="input-group">
-                        <label>LPA Normalizado/Projetado (R$):</label>
-                        <input type="number" id="lpa_norm" step="0.01">
+                        <label>ROE Atual (%):</label>
+                        <input type="number" id="roe_atual" step="0.01">
                     </div>
                     <div class="input-group">
-                        <label>VPA Normalizado (R$):</label>
-                        <input type="number" id="vpa_norm" step="0.01">
+                        <label>ROE Projetivo (%):</label>
+                        <input type="number" id="roe_proj" step="0.01">
                     </div>
                     <div class="input-group">
-                        <label>P/L Médio Histórico:</label>
-                        <input type="number" id="pl_hist" step="0.01">
+                        <label>DPA Projetivo (R$):</label>
+                        <input type="number" id="dpa_proj" step="0.01">
                     </div>
                     <div class="input-group">
-                        <label>DPA Médio Histórico (R$):</label>
-                        <input type="number" id="dpa_hist" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>Payout Médio Histórico (%):</label>
-                        <input type="number" id="payout_hist" step="0.01">
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid-2">
-                <!-- Crescimento -->
-                <div class="card">
-                    <h3>Taxas de Crescimento</h3>
-                    <div class="input-group">
-                        <label>CAGR Histórico (% ao ano):</label>
-                        <input type="number" id="cagr" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>Taxa de Crescimento Sustentável - SGR (%):</label>
+                        <label>Crescimento Sustentável (SGR) Projetivo (%):</label>
                         <input type="number" id="sgr" step="0.01">
                     </div>
-                    <div class="input-group">
-                        <label>Usar para PEG Ratio:</label>
-                        <select id="growth_type">
-                            <option value="cagr">CAGR</option>
-                            <option value="sgr">SGR</option>
+                    
+                    <div style="margin-top:20px;">
+                        <label><b>Base de Crescimento para PEG Ratio:</b></label>
+                        <select id="growth_type" style="width:100%; padding:0.6rem; border-radius:6px; margin-top:5px; border: 1px solid #cbd5e1;">
+                            <option value="cagr">CAGR (Histórico)</option>
+                            <option value="sgr">SGR (Crescimento Sustentável Projetivo)</option>
                         </select>
                     </div>
-                </div>
 
-                <!-- Constantes Dinâmicas -->
-                <div class="card">
-                    <h3>Variáveis Alvo</h3>
-                    <div class="input-group">
-                        <label>Dividend Yields Alvo (%) - <small>Separe por vírgula</small></label>
-                        <input type="text" id="dy_targets" value="6, 8, 10" placeholder="Ex: 6, 8, 10">
-                    </div>
-                    <button class="btn-primary" onclick="calcularTudo()" style="margin-top: 1rem; width: 100%;">Calcular Valuation</button>
+                    <button class="btn-primary" onclick="calcularTudo()" style="margin-top: 1.5rem; width: 100%; padding: 1rem; font-size: 1.1rem;">Calcular Preços Alvo</button>
                 </div>
             </div>
         </section>
 
         <section id="results" class="tab-content">
             <div class="results-header">
-                <h2>Preços Alvo e Indicadores</h2>
+                <h2>Preços Alvo: <span id="res_ticker"></span></h2>
                 <button class="btn-excel" onclick="exportExcel()">Baixar Excel Bonito</button>
             </div>
             
             <div class="results-grid" id="results_container">
-                <!-- Results will be injected here by JS -->
+                <!-- Cards Injetados via JS -->
             </div>
             
-            <div class="card" style="margin-top:20px;">
-                <h3>Tabela de Preço Teto Bazin (Por DY)</h3>
-                <div class="table-responsive">
-                    <table id="bazin_table">
-                        <thead>
-                            <tr>
-                                <th>Dividend Yield Alvo</th>
-                                <th>Bazin Histórico (R$)</th>
-                                <th>Bazin Projetivo (R$)</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+            <div class="grid-2" style="margin-top:20px;">
+                <!-- Pirâmide de Bazin Histórica -->
+                <div class="card">
+                    <h3>Pirâmide de Bazin (Histórica)</h3>
+                    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Baseada no DPA Histórico Médio. Valores representam o Preço Teto para cada DY Alvo.</p>
+                    <div class="pyramid-container" id="pyramid_hist"></div>
+                </div>
+
+                <!-- Pirâmide de Bazin Projetiva -->
+                <div class="card">
+                    <h3>Pirâmide de Bazin (Projetiva)</h3>
+                    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Baseada no Lucro e Payout Projetivos.</p>
+                    <div class="pyramid-container" id="pyramid_proj"></div>
                 </div>
             </div>
         </section>
