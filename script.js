@@ -1,320 +1,332 @@
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        if(btn.innerText.includes(tabId === 'inputs' ? '1.' : '2.')) btn.classList.add('active');
+/* ---------- Ajuda: explicações dos cálculos ---------- */
+const HELP = {
+    lucro_atual: ['Lucro Líquido Atual', 'Patrimônio líquido × ROE normalizado.', 'Estima o lucro anual que a empresa gera hoje, assumindo que o ROE normalizado é o retorno típico sobre o patrimônio.', 'Lucro Atual = Patrimônio Líquido × (ROE Norm. ÷ 100)'],
+    lucro_proj: ['Lucro Líquido Projetivo', 'Lucro atual crescido por 1 ano à taxa g.', 'Projeta o lucro do próximo período aplicando o crescimento escolhido (SGR ou CAGR).', 'Lucro Proj. = Lucro Atual × (1 + g ÷ 100)'],
+    sgr: ['Crescimento (g) aplicado', 'SGR ou CAGR, conforme a base escolhida.', 'O SGR (taxa de crescimento sustentável) é a parte do lucro que a empresa retém e reinveste ao ROE normalizado. Se você escolher CAGR, usa-se o crescimento histórico informado.', 'SGR = ROE Norm. × (1 − Payout ÷ 100)\ng = SGR  ou  g = CAGR'],
+    patrimonio_proj: ['Patrimônio Líquido Projetado', 'Patrimônio atual + lucro projetivo retido.', 'Soma ao patrimônio atual a parte do lucro projetado que não foi distribuída como dividendo.', 'PL Proj. = PL Atual + Lucro Proj. × (1 − Payout ÷ 100)'],
+    lpa_atual: ['LPA Atual', 'Lucro atual dividido pelo número de ações.', 'Lucro por ação: quanto do lucro cabe a cada papel.', 'LPA Atual = Lucro Atual ÷ Nº de Papéis'],
+    lpa_proj: ['LPA Projetivo', 'Lucro projetivo dividido pelo número de ações.', 'Lucro por ação esperado após o crescimento projetado.', 'LPA Proj. = Lucro Proj. ÷ Nº de Papéis'],
+    vpa_atual: ['VPA Atual', 'Patrimônio atual dividido pelo número de ações.', 'Valor patrimonial por ação.', 'VPA Atual = PL Atual ÷ Nº de Papéis'],
+    vpa_proj: ['VPA Projetivo', 'Patrimônio projetado dividido pelo número de ações.', 'Valor patrimonial por ação após reter o lucro projetado.', 'VPA Proj. = PL Proj. ÷ Nº de Papéis'],
+    pl_atual: ['P/L Atual', 'Cotação dividida pelo LPA atual.', 'Quantos anos de lucro atual você paga ao comprar a ação ao preço de hoje.', 'P/L Atual = Cotação ÷ LPA Atual'],
+    dpa_proj: ['DPA Projetivo', 'LPA projetivo vezes o payout.', 'Dividendo por ação esperado, usado no Bazin projetivo.', 'DPA Proj. = LPA Proj. × (Payout ÷ 100)'],
+    graham_constante: ['Constante de Graham', 'P/L máximo × P/VP máximo.', 'Graham aceita pagar no máximo 15× o lucro e 1,5× o patrimônio, o que dá 22,5. Você pode ajustar os dois limites.', 'K = P/L máx. × P/VP máx.'],
+    res_anos: ['Anos de projeção', 'Prazo usado no múltiplo futuro.', 'Quantos anos o LPA cresce antes de aplicar o P/L médio e descontar de volta ao presente.', 'Usado em: LPA Futuro = LPA × (1 + g)^anos'],
+    res_risco: ['Taxa de risco de desconto', 'Retorno mínimo exigido ao ano.', 'Traz o preço futuro a valor presente. Por padrão começa igual à taxa de juros Y.', 'Valor Presente = Preço Futuro ÷ (1 + risco)^anos'],
+    peg_atual: ['PEG Ratio (P/L atual)', 'P/L atual dividido pelo crescimento g.', 'Compara o preço com o crescimento. Menor que 1: barato; até 2: razoável; até 3: caro; acima: muito caro. Só calcula com g e P/L positivos.', 'PEG = P/L Atual ÷ g (g em %)'],
+    peg_hist: ['PEG Ratio (P/L médio)', 'P/L médio histórico dividido por g.', 'Mesma leitura do PEG, usando o P/L médio histórico em vez do atual.', 'PEG = P/L Médio Hist. ÷ g (g em %)'],
+    graham_trad_a: ['Graham Tradicional (atual)', 'Raiz de K × LPA × VPA atuais.', 'Preço máximo que Graham considera justo para uma empresa com esse lucro e patrimônio por ação.', 'Preço = √( K × LPA Atual × VPA Atual )'],
+    graham_trad_p: ['Graham Tradicional (projetado)', 'Raiz de K × LPA × VPA projetados.', 'Mesma fórmula, usando lucro e patrimônio por ação projetados.', 'Preço = √( K × LPA Proj. × VPA Proj. )'],
+    graham_mod_a: ['Graham Modificado (LPA atual)', 'LPA × (8,5 + 2g) × 4,4 ÷ Y.', 'Versão de Graham que inclui o crescimento (g, em %) e ajusta pela taxa de juros Y: quanto maior o juro, menor o preço justo.', 'Preço = LPA Atual × (8,5 + 2 × g) × 4,4 ÷ Y'],
+    graham_mod_p: ['Graham Modificado (LPA proj.)', 'Mesma fórmula com o LPA projetivo.', 'Usa o lucro por ação projetado no lugar do atual.', 'Preço = LPA Proj. × (8,5 + 2 × g) × 4,4 ÷ Y'],
+    justo_a: ['Preço Justo (P/L médio)', 'LPA atual × P/L médio histórico.', 'Quanto a ação valeria se negociasse ao seu P/L médio de sempre.', 'Preço Justo = LPA Atual × P/L Médio Hist.'],
+    justo_p: ['Preço Justo (P/L médio + LPA proj.)', 'LPA projetivo × P/L médio histórico.', 'Igual ao anterior, mas com o lucro por ação projetado.', 'Preço Justo = LPA Proj. × P/L Médio Hist.'],
+    futuro: ['Alvo do Múltiplo Futuro', 'Preço daqui a N anos trazido ao presente.', 'Projeta o LPA por N anos com o crescimento g, multiplica pelo P/L médio e desconta pela taxa de risco.', 'LPA Futuro = LPA Atual × (1 + g)^N\nPreço Futuro = LPA Futuro × P/L Médio\nAlvo = Preço Futuro ÷ (1 + risco)^N'],
+    bazin_h: ['Bazin: teto histórico', 'DPA histórico dividido pelo yield desejado.', 'Preço máximo para receber, em dividendos, pelo menos o yield de cada nível (15%, 12%, 10%, 8%, 6%). Yield maior significa preço menor e mais margem.', 'Teto = DPA Histórico ÷ (Yield ÷ 100)'],
+    bazin_p: ['Bazin: teto projetivo', 'DPA projetivo dividido pelo yield desejado.', 'Mesma lógica do Bazin, usando o dividendo projetado (LPA projetivo × payout).', 'Teto = DPA Projetivo ÷ (Yield ÷ 100)']
+};
+const q = k => `<button type="button" class="q" data-h="${k}" aria-label="Como é calculado">?</button>`;
+
+function addHelp() {
+    Object.keys(HELP).forEach(id => {
+        const el = document.getElementById(id);
+        const lb = el && el.closest('.input-group') && el.closest('.input-group').querySelector('label');
+        if (lb) lb.insertAdjacentHTML('beforeend', q(id));
     });
 }
 
-let vData = {};
-let isFirstCalc = true;
+const tip = document.getElementById('tip');
+document.addEventListener('mouseover', e => showTip(e.target.closest('.q')));
+document.addEventListener('focusin', e => showTip(e.target.closest('.q')));
+document.addEventListener('mouseout', () => tip.classList.remove('on'));
+document.addEventListener('focusout', () => tip.classList.remove('on'));
+function showTip(b) {
+    if (!b || !HELP[b.dataset.h]) return;
+    tip.innerHTML = `${HELP[b.dataset.h][1]}<em>Clique para ver a fórmula</em>`;
+    tip.classList.add('on');
+    const r = b.getBoundingClientRect(), w = tip.offsetWidth;
+    tip.style.left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8)) + 'px';
+    const top = r.bottom + 8 + tip.offsetHeight > innerHeight ? r.top - tip.offsetHeight - 8 : r.bottom + 8;
+    tip.style.top = top + 'px';
+}
+document.addEventListener('click', e => {
+    const b = e.target.closest('.q');
+    if (b && HELP[b.dataset.h]) {
+        e.preventDefault();
+        const [t, , l, f] = HELP[b.dataset.h];
+        document.getElementById('mbody').innerHTML = `<h3>${t}</h3><p>${l}</p><div class="lbl">Fórmula usada</div><div class="formula">${f}</div>`;
+        tip.classList.remove('on');
+        document.getElementById('modal').showModal();
+    }
+});
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') e.target.close(); });
 
-function getV(id) { return parseFloat(document.getElementById(id).value) || 0; }
-function setV(id, val) { document.getElementById(id).value = isNaN(val) ? '' : val.toFixed(2); }
+/* ---------- Utilitários ---------- */
+const N = v => parseFloat(v) || 0;
+const brl = v => v > 0 ? 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 3200);
+}
+function switchTab(id) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.toggle('active', el.id === id));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+}
+function readForm() {
+    const r = {};
+    document.querySelectorAll('#inputs input, #inputs select, #results input').forEach(i => { if (i.id) r[i.id] = i.value; });
+    return r;
+}
+function fillForm(inputs) {
+    Object.keys(inputs).forEach(k => { const el = document.getElementById(k); if (el) el.value = inputs[k]; });
+}
+
+/* ---------- Cálculo (função pura: recebe os inputs, devolve tudo) ---------- */
+function compute(r) {
+    const cot = N(r.cotacao), n = N(r.n_papeis), pat = N(r.patrimonio_atual), roe = N(r.roe_norm);
+    const pay = N(r.payout), cagr = N(r.cagr), y = N(r.taxa_y), plHist = N(r.pl_hist), dpaHist = N(r.dpa_hist);
+    const K = N(r.graham_pl) * N(r.graham_pvp);
+    const sgr = (roe > 0 && pay >= 0) ? roe * (1 - pay / 100) : 0;
+    const g = r.growth_type === 'cagr' ? cagr : sgr;
+
+    const lucA = (pat > 0 && roe > 0) ? pat * roe / 100 : N(r.lucro_atual);
+    const lucP = (lucA > 0 && g !== 0) ? lucA * (1 + g / 100) : N(r.lucro_proj);
+    const patP = (pat > 0 && lucP > 0) ? pat + lucP * (1 - pay / 100) : N(r.patrimonio_proj);
+    const lpaA = (n > 0 && lucA > 0) ? lucA / n : N(r.lpa_atual);
+    const lpaP = (n > 0 && lucP > 0) ? lucP / n : N(r.lpa_proj);
+    const vpaA = (n > 0 && pat > 0) ? pat / n : N(r.vpa_atual);
+    const vpaP = (n > 0 && patP > 0) ? patP / n : N(r.vpa_proj);
+    const plA = (cot > 0 && lpaA > 0) ? cot / lpaA : N(r.pl_atual);
+    const dpaP = (lpaP > 0 && pay > 0) ? lpaP * pay / 100 : N(r.dpa_proj);
+
+    const peg = pl => (g > 0 && pl > 0) ? pl / g : null;
+    const gt = (l, v) => (l > 0 && v > 0) ? Math.sqrt(K * l * v) : 0;
+    const gm = l => (l <= 0 || y <= 0) ? 0 : (l * (8.5 + 2 * g) * 4.4) / y;
+
+    const anos = N(r.res_anos) || 5;
+    const risco = (r.res_risco !== undefined && r.res_risco !== '') ? N(r.res_risco) : y;
+    const futBruto = lpaA * Math.pow(1 + g / 100, anos) * plHist;
+    const levels = [15, 12, 10, 8, 6];
+
+    return {
+        ticker: r.ticker || 'Ação', cot, n, pat, roe, pay, cagr, gType: r.growth_type === 'cagr' ? 'CAGR' : 'SGR',
+        dpaHist, plHist, y, g, K, anos, risco,
+        derived: { lucro_atual: lucA, lucro_proj: lucP, sgr: g, patrimonio_proj: patP, lpa_atual: lpaA, lpa_proj: lpaP, vpa_atual: vpaA, vpa_proj: vpaP, pl_atual: plA, dpa_proj: dpaP, graham_constante: K },
+        lucA, lucP, lpaA, lpaP, vpaA, vpaP,
+        pegA: peg(plA), pegH: peg(plHist),
+        gtA: gt(lpaA, vpaA), gtP: gt(lpaP, vpaP), gmA: gm(lpaA), gmP: gm(lpaP),
+        jA: lpaA * plHist, jP: lpaP * plHist,
+        futBruto, futVP: futBruto / Math.pow(1 + risco / 100, anos),
+        bazH: levels.map(dy => dpaHist > 0 ? dpaHist / (dy / 100) : 0),
+        bazP: levels.map(dy => dpaP > 0 ? dpaP / (dy / 100) : 0),
+        levels
+    };
+}
+
+let vData = null, isFirstCalc = true, portfolio = [];
 
 function autoCalc() {
-    const cot = getV('cotacao');
-    const n = getV('n_papeis');
-    const pat_a = getV('patrimonio_atual');
-    const roe_norm = getV('roe_norm');
-    const pay = getV('payout');
-    const cagr = getV('cagr');
-    const gType = document.getElementById('growth_type').value;
-    const taxa_y = getV('taxa_y');
-
-    // Inicializa Taxa de Risco se vazio
-    if (document.getElementById('res_risco').value === '') {
-        document.getElementById('res_risco').value = taxa_y;
-    }
-
-    // Graham Constante
-    const g_pl = getV('graham_pl');
-    const g_pvp = getV('graham_pvp');
-    const g_const = g_pl * g_pvp;
-    setV('graham_constante', g_const);
-
-    // 1. Lucro Atual
-    if (pat_a > 0 && roe_norm > 0) {
-        setV('lucro_atual', pat_a * (roe_norm / 100));
-    }
-    const luc_a = getV('lucro_atual');
-
-    // 2. Crescimento SGR
-    let sgr_val = 0;
-    if (roe_norm > 0 && pay >= 0) {
-        sgr_val = roe_norm * (1 - (pay / 100));
-    }
-    const g_percent = gType === 'cagr' ? cagr : sgr_val;
-    setV('sgr', g_percent);
-
-    // 3. Lucro Projetado
-    if (luc_a > 0 && g_percent !== 0) {
-        setV('lucro_proj', luc_a * (1 + (g_percent / 100)));
-    }
-    const luc_p = getV('lucro_proj');
-
-    // 4. Patrimônio Projetado (PatAtual + LucroProj*(1-Payout))
-    if (pat_a > 0 && luc_p > 0) {
-        setV('patrimonio_proj', pat_a + (luc_p * (1 - (pay / 100))));
-    }
-    const pat_p = getV('patrimonio_proj');
-
-    // 5. Métricas por Ação
-    if(n > 0) {
-        if(luc_a > 0) setV('lpa_atual', luc_a / n);
-        if(luc_p > 0) setV('lpa_proj', luc_p / n);
-        if(pat_a > 0) setV('vpa_atual', pat_a / n);
-        if(pat_p > 0) setV('vpa_proj', pat_p / n);
-    }
-    
-    const lpa_a = getV('lpa_atual');
-    
-    // 6. P/L Atual
-    if(cot > 0 && lpa_a > 0) setV('pl_atual', cot / lpa_a);
-    
-    // 7. DPA Projetivo
-    const lpa_p = getV('lpa_proj');
-    if(lpa_p > 0 && pay > 0) {
-        setV('dpa_proj', lpa_p * (pay / 100));
-    }
+    const rk = document.getElementById('res_risco');
+    if (rk.value === '') rk.value = document.getElementById('taxa_y').value;
+    const c = compute(readForm());
+    Object.keys(c.derived).forEach(id => {
+        const el = document.getElementById(id), v = c.derived[id];
+        if (el && document.activeElement !== el) el.value = v ? v.toFixed(2) : '';
+    });
+    return c;
 }
 
 function calcularTudo() {
-    autoCalc();
-
-    const ticker = document.getElementById('ticker').value || 'Ação';
-    const cot = getV('cotacao');
-    
-    document.getElementById('res_ticker').innerText = ticker;
-    document.getElementById('res_cotacao').innerText = cot > 0 ? `R$ ${cot.toFixed(2)}` : 'N/A';
-
-    const lpa_a = getV('lpa_atual');
-    const vpa_a = getV('vpa_atual');
-    const lpa_p = getV('lpa_proj');
-    const vpa_p = getV('vpa_proj');
-    
-    const pl_a = getV('pl_atual');
-    const pl_hist = getV('pl_hist');
-    const dpa_hist = getV('dpa_hist');
-    const dpa_proj = getV('dpa_proj');
-    
-    const g_percent = getV('sgr'); 
-    const y_tax = getV('taxa_y'); 
-    const const_graham = getV('graham_constante');
-
-    // --- CÁLCULOS DOS MÚLTIPLOS E TETOS ---
-    
-    // PEG Ratio
-    const calcPeg = (pl, g) => (g > 0 && pl > 0) ? (pl / g).toFixed(2) : 'N/A';
-    const peg_atual = calcPeg(pl_a, g_percent);
-    const peg_hist = calcPeg(pl_hist, g_percent);
-
-    const getPegBadge = valStr => {
-        if (valStr === 'N/A') return { text: 'Indisponível', class: 'gray' };
-        const v = parseFloat(valStr);
-        if(v < 1) return {text: 'Barato', class: 'green'};
-        if(v <= 2) return {text: 'Razoável', class: 'yellow'};
-        if(v <= 3) return {text: 'Caro', class: 'orange'};
-        return {text: 'Muito Caro', class: 'red'};
-    };
-
-    // Graham Tradicional
-    const calcGraham = (l, v) => (l > 0 && v > 0) ? Math.sqrt(const_graham * l * v) : 0;
-    const graham_trad_a = calcGraham(lpa_a, vpa_a);
-    const graham_trad_p = calcGraham(lpa_p, vpa_p);
-
-    // Graham Modificado: V = [LPA * (8.5 + 2g) * 4.4] / Y
-    const calcGrahamMod = (lpa, g_val, y_val) => {
-        if(lpa <= 0 || y_val <= 0) return 0;
-        return (lpa * (8.5 + 2 * g_val) * 4.4) / y_val;
-    };
-    const graham_mod_a = calcGrahamMod(lpa_a, g_percent, y_tax);
-    const graham_mod_p = calcGrahamMod(lpa_p, g_percent, y_tax);
-
-    // Preço Justo P/L Histórico
-    const justo_pl_hist_a = lpa_a * pl_hist;
-    const justo_pl_hist_p = lpa_p * pl_hist;
-
-    // Preço Alvo por Múltiplo Futuro
-    const n_anos = getV('res_anos') || 5;
-    const t_risco = getV('res_risco') / 100;
-    
-    // LPA Futuro com base no crescimento aplicado e nº de anos
-    const lpa_futuro = lpa_a * Math.pow(1 + (g_percent / 100), n_anos);
-    const preco_futuro = lpa_futuro * pl_hist;
-    const multiplo_futuro = preco_futuro / Math.pow(1 + t_risco, n_anos);
-
-    // Bazin Levels
-    const levels = [15, 12, 10, 8, 6];
-    let bazin_h = [], bazin_p = [];
-    levels.forEach(dy => {
-        bazin_h.push({ dy, val: dpa_hist > 0 ? (dpa_hist / (dy/100)) : 0 });
-        bazin_p.push({ dy, val: dpa_proj > 0 ? (dpa_proj / (dy/100)) : 0 });
-    });
-
-    // Guardar Dados Globalmente
-    vData = { 
-        ticker, cot, n_anos, t_risco: t_risco*100, y_tax, g_percent, const_graham,
-        peg_atual, peg_hist, getPegBadge, 
-        graham_trad_a, graham_trad_p, graham_mod_a, graham_mod_p, 
-        justo_pl_hist_a, justo_pl_hist_p, multiplo_futuro, preco_futuro,
-        bazin_h, bazin_p 
-    };
-
+    vData = autoCalc();
+    document.getElementById('res_ticker').textContent = vData.ticker;
+    document.getElementById('res_cotacao').textContent = vData.cot > 0 ? brl(vData.cot) : 'N/A';
     renderCards();
     renderPyramids();
+    if (isFirstCalc) { switchTab('results'); isFirstCalc = false; }
+}
 
-    if(isFirstCalc) {
-        switchTab('results');
-        isFirstCalc = false;
+/* ---------- Renderização ---------- */
+function pegBadge(v) {
+    if (v === null) return ['Indisponível', 'gray'];
+    if (v < 1) return ['Barato', 'green'];
+    if (v <= 2) return ['Razoável', 'yellow'];
+    if (v <= 3) return ['Caro', 'orange'];
+    return ['Muito caro', 'red'];
+}
+function margin(val, cot) {
+    if (!(val > 0 && cot > 0)) return '';
+    const m = (val / cot - 1) * 100;
+    return `<span class="chip ${m >= 0 ? 'up' : 'down'}">${m >= 0 ? '+' : ''}${m.toFixed(1)}% vs cotação</span>`;
+}
+function card(key, title, val, sub, color) {
+    return `<div class="result-card" style="--c:${color}"><h4>${title}${q(key)}</h4><div class="value">${brl(val)}</div>${margin(val, vData.cot)}<span class="sub">${sub}</span></div>`;
+}
+function pegCard(key, title, v) {
+    const [t, cls] = pegBadge(v);
+    return `<div class="result-card" style="--c:#5b6b7a"><h4>${title}${q(key)}</h4><div class="value">${v === null ? 'N/A' : v.toFixed(2)}</div><span class="badge ${cls}">${t}</span></div>`;
+}
+function renderCards() {
+    const d = vData, gi = `g=${d.g.toFixed(2)}% | Y=${d.y}%`;
+    document.getElementById('results_container').innerHTML =
+        pegCard('peg_atual', 'PEG Ratio (P/L atual)', d.pegA) + pegCard('peg_hist', 'PEG Ratio (P/L médio)', d.pegH) +
+        card('graham_trad_a', 'Graham Tradicional (atual)', d.gtA, `LPA/VPA atuais | K=${d.K.toFixed(2)}`, '#0b7a64') +
+        card('graham_trad_p', 'Graham Tradicional (projetado)', d.gtP, 'LPA/VPA projetados', '#0b7a64') +
+        card('graham_mod_a', 'Graham Modificado (LPA atual)', d.gmA, gi, '#1d6fa5') +
+        card('graham_mod_p', 'Graham Modificado (LPA proj.)', d.gmP, gi, '#1d6fa5') +
+        card('justo_a', 'Preço Justo (P/L médio)', d.jA, 'Usando LPA atual', '#b8872b') +
+        card('justo_p', 'Preço Justo (P/L médio + LPA proj.)', d.jP, 'Usando LPA projetivo', '#b8872b') +
+        `<div class="result-card wide" style="--c:#c2410c"><div><h4>Alvo do múltiplo futuro (${d.anos} anos) a valor presente${q('futuro')}</h4><div class="value">${brl(d.futVP)}</div>${margin(d.futVP, d.cot)}<span class="sub">Descontado à taxa de risco de ${d.risco.toFixed(2)}%</span></div><div class="side"><h4>Preço bruto no futuro</h4><div class="value" style="font-size:1.4rem">${brl(d.futBruto)}</div></div></div>`;
+}
+function renderPyramids() {
+    const lv = (arr) => arr.map((v, i) => `<div class="pyramid-level pyr-${vData.levels[i]}">${brl(v)}<span>Yield ${vData.levels[i]}%</span></div>`).join('');
+    document.getElementById('pyramid_hist').innerHTML = lv(vData.bazH);
+    document.getElementById('pyramid_proj').innerHTML = lv(vData.bazP);
+}
+
+/* ---------- Carteira ---------- */
+function upsert(inputs) {
+    const c = compute(inputs);
+    const i = portfolio.findIndex(p => p.c.ticker === c.ticker);
+    const item = { inputs, c };
+    if (i >= 0) portfolio[i] = item; else portfolio.push(item);
+}
+function saveCurrent() {
+    const r = readForm();
+    if (!r.ticker) return toast('Informe o ticker antes de salvar.');
+    upsert(r); renderPortfolio(); toast(`${r.ticker} salva na carteira.`);
+}
+function loadStock(i) { fillForm(portfolio[i].inputs); calcularTudo(); switchTab('results'); }
+function removeStock(i) { portfolio.splice(i, 1); renderPortfolio(); }
+function clearPortfolio() { if (portfolio.length && confirm('Remover todas as ações da carteira?')) { portfolio = []; renderPortfolio(); } }
+function renderPortfolio() {
+    document.getElementById('port_count').textContent = portfolio.length;
+    const body = document.getElementById('port_body');
+    if (!portfolio.length) { body.innerHTML = '<div class="empty">Importe um ou mais arquivos JSON, ou use "Salvar na carteira" nos resultados.</div>'; return; }
+    const cell = (v, cot) => `<td class="${v > 0 && cot > 0 ? (v >= cot ? 'ok' : 'no') : ''}">${brl(v)}</td>`;
+    body.innerHTML = `<table><thead><tr><th>Ticker</th><th>Cotação</th><th>Bazin hist. 6%</th><th>Bazin proj. 6%</th><th>Graham trad.</th><th>Graham mod.</th><th>Justo P/L</th><th>Múlt. futuro</th><th></th></tr></thead><tbody>` +
+        portfolio.map(({ c }, i) => `<tr><td class="tk">${c.ticker}</td><td>${brl(c.cot)}</td>${cell(c.bazH[4], c.cot)}${cell(c.bazP[4], c.cot)}${cell(c.gtA, c.cot)}${cell(c.gmA, c.cot)}${cell(c.jA, c.cot)}${cell(c.futVP, c.cot)}<td><button onclick="loadStock(${i})">Abrir</button><button class="del" onclick="removeStock(${i})">Remover</button></td></tr>`).join('') +
+        '</tbody></table>';
+}
+
+/* ---------- JSON ---------- */
+function download(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function exportJSON() {
+    const inputs = readForm();
+    download(new Blob([JSON.stringify({ inputs, results: vData })], { type: 'application/json' }), `Valuation_Completo_${inputs.ticker || 'dados'}.json`);
+}
+function exportPortfolioJSON() {
+    if (!portfolio.length) return toast('A carteira está vazia.');
+    download(new Blob([JSON.stringify({ stocks: portfolio.map(p => ({ inputs: p.inputs })) })], { type: 'application/json' }), 'Valuation_Carteira.json');
+}
+async function importJSON(event) {
+    const files = [...event.target.files];
+    if (!files.length) return;
+    let count = 0, last = null;
+    for (const f of files) {
+        try {
+            const d = JSON.parse(await f.text());
+            const items = Array.isArray(d) ? d : (d.stocks || [d]);
+            items.forEach(it => { if (it && it.inputs) { upsert(it.inputs); last = it.inputs; count++; } });
+        } catch (err) { toast(`Erro ao ler ${f.name}.`); }
+    }
+    event.target.value = '';
+    if (!count) return;
+    renderPortfolio();
+    fillForm(last); calcularTudo();
+    switchTab(count > 1 ? 'portfolio' : 'results');
+    toast(`${count} ${count > 1 ? 'ações importadas' : 'ação importada'}. Baixe o Excel da carteira na aba Carteira.`);
+}
+
+/* ---------- Excel bonito (ExcelJS) ---------- */
+const MONEY = '"R$" #,##0.00', FONT = 'Segoe UI';
+const priceCols = () => {
+    const cols = [
+        { g: 'Ativo', h: 'Ticker', f: c => c.ticker, k: '14211C', w: 13, bold: 1 },
+        { g: 'Ativo', h: 'Cotação', f: c => c.cot, fm: MONEY, k: '14211C' },
+        { g: 'PEG Ratio', h: 'P/L atual', f: c => c.pegA === null ? 'N/A' : c.pegA, fm: '0.00', k: '5B6B7A' },
+        { g: 'PEG Ratio', h: 'P/L médio', f: c => c.pegH === null ? 'N/A' : c.pegH, fm: '0.00', k: '5B6B7A' },
+        { g: 'Graham Tradicional', h: 'Atual', f: c => c.gtA, p: 1, fm: MONEY, k: '0B7A64' },
+        { g: 'Graham Tradicional', h: 'Projetado', f: c => c.gtP, p: 1, fm: MONEY, k: '0B7A64' },
+        { g: 'Graham Modificado', h: 'Atual', f: c => c.gmA, p: 1, fm: MONEY, k: '1D6FA5' },
+        { g: 'Graham Modificado', h: 'Projetado', f: c => c.gmP, p: 1, fm: MONEY, k: '1D6FA5' },
+        { g: 'Preço Justo (P/L médio)', h: 'LPA atual', f: c => c.jA, p: 1, fm: MONEY, k: 'B8872B', w: 15 },
+        { g: 'Preço Justo (P/L médio)', h: 'LPA proj.', f: c => c.jP, p: 1, fm: MONEY, k: 'B8872B', w: 15 },
+        { g: 'Múltiplo Futuro', h: 'Valor presente', f: c => c.futVP, p: 1, fm: MONEY, k: 'C2410C' },
+        { g: 'Múltiplo Futuro', h: 'Preço futuro', f: c => c.futBruto, fm: MONEY, k: 'C2410C' }
+    ];
+    [15, 12, 10, 8, 6].forEach((dy, i) => cols.push({ g: 'Bazin Histórico', h: `Yield ${dy}%`, f: c => c.bazH[i], p: 1, fm: MONEY, k: '2D6A4F', w: 14 }));
+    [15, 12, 10, 8, 6].forEach((dy, i) => cols.push({ g: 'Bazin Projetivo', h: `Yield ${dy}%`, f: c => c.bazP[i], p: 1, fm: MONEY, k: '7A4E9C', w: 14 }));
+    return cols;
+};
+const inputCols = () => [
+    ['Ticker', c => c.ticker], ['Cotação', c => c.cot, MONEY], ['Nº de papéis', c => c.n, '#,##0'],
+    ['Patrimônio líquido', c => c.pat, MONEY], ['ROE norm. (%)', c => c.roe, '0.00'], ['Payout (%)', c => c.pay, '0.00'],
+    ['CAGR (%)', c => c.cagr, '0.00'], ['Base de crescimento', c => c.gType], ['g aplicado (%)', c => c.g, '0.00'],
+    ['DPA hist.', c => c.dpaHist, MONEY], ['P/L médio', c => c.plHist, '0.00'], ['Taxa Y (%)', c => c.y, '0.00'],
+    ['Lucro atual', c => c.lucA, MONEY], ['Lucro proj.', c => c.lucP, MONEY],
+    ['LPA atual', c => c.lpaA, MONEY], ['LPA proj.', c => c.lpaP, MONEY], ['VPA atual', c => c.vpaA, MONEY], ['VPA proj.', c => c.vpaP, MONEY]
+].map(([h, f, fm]) => ({ g: 'Dados de entrada e métricas', h, f, fm, k: '14211C', w: 18, bold: h === 'Ticker' }));
+
+function fillSheet(ws, cols, list, legend) {
+    const side = { style: 'thin', color: { argb: 'FFD9DFD6' } }, border = { top: side, bottom: side, left: side, right: side };
+    const mid = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    ws.views = [{ state: 'frozen', xSplit: 1, ySplit: 2, showGridLines: false }];
+    cols.forEach((c, i) => {
+        ws.getColumn(i + 1).width = c.w || 17;
+        [ws.getCell(1, i + 1), ws.getCell(2, i + 1)].forEach((x, j) => {
+            x.value = j ? c.h : c.g;
+            x.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + c.k } };
+            x.font = { name: FONT, bold: true, size: j ? 10.5 : 12, color: { argb: 'FFFFFFFF' } };
+            x.alignment = mid; x.border = border;
+        });
+    });
+    let s = 0;
+    cols.forEach((c, i) => { if (i === cols.length - 1 || cols[i + 1].g !== c.g) { if (i > s) ws.mergeCells(1, s + 1, 1, i + 1); s = i + 1; } });
+    ws.getRow(1).height = 28; ws.getRow(2).height = 32;
+    list.forEach((c, r) => {
+        const row = ws.getRow(r + 3); row.height = 26;
+        cols.forEach((col, i) => {
+            const cell = row.getCell(i + 1), v = col.f(c);
+            const empty = col.p && !(v > 0);
+            cell.value = empty ? '—' : v;
+            if (col.fm && !empty) cell.numFmt = col.fm;
+            let fill = r % 2 ? 'FFF3F6F1' : 'FFFFFFFF', color = 'FF14211C';
+            if (col.p && v > 0 && c.cot > 0) { const ok = v >= c.cot; fill = ok ? 'FFDCF3E6' : 'FFFBE1DE'; color = ok ? 'FF0B5D4B' : 'FF9B2C20'; }
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+            cell.font = { name: FONT, size: 11, bold: !!col.bold || (col.p && v > 0), color: { argb: color } };
+            cell.alignment = mid; cell.border = border;
+        });
+    });
+    if (legend) {
+        const r = list.length + 4;
+        ws.mergeCells(r, 1, r, 8);
+        const c = ws.getCell(r, 1);
+        c.value = 'Verde: preço teto acima da cotação (ação abaixo do teto). Vermelho: preço teto abaixo da cotação.';
+        c.font = { name: FONT, italic: true, size: 10, color: { argb: 'FF5D6B63' } };
+        c.alignment = { horizontal: 'left', vertical: 'middle' };
     }
 }
-
-function renderCards() {
-    const c = document.getElementById('results_container');
-    c.innerHTML = `
-        <div class="result-card">
-            <h4>PEG Ratio (P/L Atual)</h4>
-            <div class="value">${vData.peg_atual}</div>
-            <div class="badge ${vData.getPegBadge(vData.peg_atual).class}">${vData.getPegBadge(vData.peg_atual).text}</div>
-        </div>
-        <div class="result-card">
-            <h4>PEG Ratio (P/L Médio Hist.)</h4>
-            <div class="value">${vData.peg_hist}</div>
-            <div class="badge ${vData.getPegBadge(vData.peg_hist).class}">${vData.getPegBadge(vData.peg_hist).text}</div>
-        </div>
-
-        <div class="result-card" style="border-left-color: #8b5cf6;">
-            <h4>Graham Tradicional (Atual)</h4>
-            <div class="value">R$ ${vData.graham_trad_a.toFixed(2)}</div>
-            <span style="font-size:0.75rem; color:#64748b; margin-top:5px;">LPA/VPA Atuais | K=${vData.const_graham.toFixed(2)}</span>
-        </div>
-        <div class="result-card" style="border-left-color: #8b5cf6;">
-            <h4>Graham Tradicional (Projetado)</h4>
-            <div class="value">R$ ${vData.graham_trad_p.toFixed(2)}</div>
-            <span style="font-size:0.75rem; color:#64748b; margin-top:5px;">LPA/VPA Projetados</span>
-        </div>
-        
-        <div class="result-card" style="border-left-color: #0ea5e9;">
-            <h4>Graham Modificado (LPA Atual)</h4>
-            <div class="value">R$ ${vData.graham_mod_a.toFixed(2)}</div>
-            <span style="font-size:0.75rem; color:#64748b; margin-top:5px;">g=${vData.g_percent.toFixed(2)}% | Y=${vData.y_tax}%</span>
-        </div>
-        <div class="result-card" style="border-left-color: #0ea5e9;">
-            <h4>Graham Modificado (LPA Proj.)</h4>
-            <div class="value">R$ ${vData.graham_mod_p.toFixed(2)}</div>
-            <span style="font-size:0.75rem; color:#64748b; margin-top:5px;">g=${vData.g_percent.toFixed(2)}% | Y=${vData.y_tax}%</span>
-        </div>
-
-        <div class="result-card" style="border-left-color: #10b981;">
-            <h4>Preço Justo (P/L Médio)</h4>
-            <div class="value">R$ ${vData.justo_pl_hist_a.toFixed(2)}</div>
-            <span style="font-size:0.75rem; color:#64748b; margin-top:5px;">Usando LPA Atual</span>
-        </div>
-        <div class="result-card" style="border-left-color: #10b981;">
-            <h4>Preço Justo (P/L Médio + LPA Proj)</h4>
-            <div class="value">R$ ${vData.justo_pl_hist_p.toFixed(2)}</div>
-            <span style="font-size:0.75rem; color:#64748b; margin-top:5px;">Usando LPA Projetivo</span>
-        </div>
-
-        <div class="result-card" style="border-left-color: #f59e0b; grid-column: 1 / -1; display:flex; flex-direction:row; align-items:center; justify-content:space-between;">
-            <div>
-                <h4>Alvo Múltiplo Futuro (${vData.n_anos} Anos) trazido a V.P.</h4>
-                <div class="value" style="font-size: 2rem;">R$ ${vData.multiplo_futuro.toFixed(2)}</div>
-                <span style="font-size:0.85rem; color:#64748b; margin-top:5px;">Descontado à Taxa de Risco de ${vData.t_risco.toFixed(2)}%</span>
-            </div>
-            <div style="text-align: right; background: #fef3c7; padding: 1rem; border-radius:8px;">
-                <h4 style="color:#b45309; font-size:0.8rem;">Preço Bruto no Futuro</h4>
-                <div style="font-size: 1.2rem; font-weight:bold; color:#92400e;">R$ ${vData.preco_futuro.toFixed(2)}</div>
-            </div>
-        </div>
-    `;
+async function buildExcel(list, filename) {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Valuation & Preço Teto';
+    fillSheet(wb.addWorksheet('Preços Teto', { properties: { tabColor: { argb: 'FFB8872B' } } }), priceCols(), list, true);
+    fillSheet(wb.addWorksheet('Dados de Entrada', { properties: { tabColor: { argb: 'FF0B7A64' } } }), inputCols(), list, false);
+    download(new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
 }
-
-function renderPyramids() {
-    const ph = document.getElementById('pyramid_hist');
-    const pp = document.getElementById('pyramid_proj');
-    ph.innerHTML = ''; pp.innerHTML = '';
-
-    vData.bazin_h.forEach(b => {
-        ph.innerHTML += `<div class="pyramid-level pyr-${b.dy}">R$ ${b.val.toFixed(2)} <span>Yield ${b.dy}%</span></div>`;
-    });
-    
-    vData.bazin_p.forEach(b => {
-        pp.innerHTML += `<div class="pyramid-level pyr-${b.dy}">R$ ${b.val.toFixed(2)} <span>Yield ${b.dy}%</span></div>`;
-    });
-}
-
-function exportJSON() {
-    let inputs = {};
-    document.querySelectorAll('input, select').forEach(i => {
-        if(i.id && i.id !== 'import-json') inputs[i.id] = i.value;
-    });
-    const finalData = { inputs, results: vData };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(finalData));
-    const a = document.createElement('a');
-    a.href = dataStr; a.download = `Valuation_Completo_${vData.ticker || 'dados'}.json`;
-    document.body.appendChild(a); a.click(); a.remove();
-}
-
-function importJSON(event) {
-    const file = event.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-        try {
-            const data = JSON.parse(e.target.result);
-            if(data.inputs) {
-                Object.keys(data.inputs).forEach(k => {
-                    const el = document.getElementById(k);
-                    if(el) el.value = data.inputs[k];
-                });
-                autoCalc();
-                alert("Dados importados! Clique em Calcular para ver os resultados.");
-            }
-        } catch(err) { alert("Erro ao ler JSON."); }
-    };
-    reader.readAsText(file);
-}
-
 function exportExcel() {
-    if(!vData.bazin_h) return alert("Calcule os resultados primeiro!");
-    const wb = XLSX.utils.book_new();
-    
-    // Organizar excel em colunas (flat)
-    const row1_headers = [
-        "Ticker", "Cotação Atual", "PEG Ratio (Atual)", "PEG Ratio (Histórico)", 
-        "Graham Trad. (Atual)", "Graham Trad. (Proj)", "Graham Mod. (Atual)", "Graham Mod. (Proj)",
-        "Preço Justo (P/L Médio)", "Preço Justo (P/L Médio + LPA Proj)", 
-        "Preço Alvo Múltiplo Futuro (VP)"
-    ];
-    
-    const row2_values = [
-        vData.ticker, vData.cot, vData.peg_atual, vData.peg_hist,
-        vData.graham_trad_a.toFixed(2), vData.graham_trad_p.toFixed(2), 
-        vData.graham_mod_a.toFixed(2), vData.graham_mod_p.toFixed(2),
-        vData.justo_pl_hist_a.toFixed(2), vData.justo_pl_hist_p.toFixed(2),
-        vData.multiplo_futuro.toFixed(2)
-    ];
-
-    // Adiciona Bazin nas colunas dinamicamente
-    vData.bazin_h.forEach(b => {
-        row1_headers.push(`Bazin Hist. (${b.dy}%)`);
-        row2_values.push(b.val.toFixed(2));
-    });
-    vData.bazin_p.forEach(b => {
-        row1_headers.push(`Bazin Proj. (${b.dy}%)`);
-        row2_values.push(b.val.toFixed(2));
-    });
-
-    const ws1 = XLSX.utils.aoa_to_sheet([row1_headers, row2_values]);
-    
-    // Formatação básica de colunas
-    const wscols = row1_headers.map(() => ({wch: 22}));
-    ws1['!cols'] = wscols;
-
-    XLSX.utils.book_append_sheet(wb, ws1, "Resumo Completo");
-    XLSX.writeFile(wb, `Valuation_${vData.ticker || 'Acao'}.xlsx`);
+    if (!vData) return toast('Gere os resultados primeiro.');
+    buildExcel([vData], `Valuation_${vData.ticker || 'Acao'}.xlsx`);
 }
+function exportPortfolioExcel() {
+    if (!portfolio.length) return toast('A carteira está vazia.');
+    buildExcel(portfolio.map(p => p.c), 'Valuation_Carteira.xlsx');
+}
+
+addHelp();
+renderPortfolio();
