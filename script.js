@@ -23,7 +23,15 @@ const HELP = {
     justo_p: ['Preço Justo (P/L médio + LPA proj.)', 'LPA projetivo × P/L médio histórico.', 'Igual ao anterior, mas com o lucro por ação projetado.', 'Preço Justo = LPA Proj. × P/L Médio Hist.'],
     futuro: ['Alvo do Múltiplo Futuro', 'Preço daqui a N anos trazido ao presente.', 'Projeta o LPA por N anos com o crescimento g, multiplica pelo P/L médio e desconta pela taxa de risco.', 'LPA Futuro = LPA Atual × (1 + g)^N\nPreço Futuro = LPA Futuro × P/L Médio\nAlvo = Preço Futuro ÷ (1 + risco)^N'],
     bazin_h: ['Bazin: teto histórico', 'DPA histórico dividido pelo yield desejado.', 'Preço máximo para receber, em dividendos, pelo menos o yield de cada nível (15%, 12%, 10%, 8%, 6%). Yield maior significa preço menor e mais margem.', 'Teto = DPA Histórico ÷ (Yield ÷ 100)'],
-    bazin_p: ['Bazin: teto projetivo', 'DPA projetivo dividido pelo yield desejado.', 'Mesma lógica do Bazin, usando o dividendo projetado (LPA projetivo × payout).', 'Teto = DPA Projetivo ÷ (Yield ÷ 100)']
+    bazin_p: ['Bazin: teto projetivo', 'DPA projetivo dividido pelo yield desejado.', 'Mesma lógica do Bazin, usando o dividendo projetado (LPA projetivo × payout).', 'Teto = DPA Projetivo ÷ (Yield ÷ 100)'],
+    vm: ['Valor de Mercado', 'Cotação × número de papéis.', 'Quanto o mercado paga pela empresa inteira hoje.', 'Valor de Mercado = Cotação × Nº de Papéis'],
+    pb_lucro: ['Lucro Líquido Atual', 'Patrimônio líquido × ROE normalizado.', 'Mesmo lucro das métricas calculadas, usado como base do payback.', 'Lucro Atual = Patrimônio Líquido × (ROE Norm. ÷ 100)'],
+    pb_pl: ['P/L Atual (em anos)', 'Valor de mercado ÷ lucro líquido atual.', 'Quantos anos de lucro atual, mantido constante, equivalem ao valor de mercado.', 'P/L = Valor de Mercado ÷ Lucro Líquido Atual'],
+    ey: ['Earning Yield', 'Lucro líquido ÷ valor de mercado.', 'Retorno em lucro que você teria ao comprar a empresa inteira pelo valor de mercado. É o inverso do P/L.', 'EY (%) = Lucro Líquido Atual ÷ Valor de Mercado × 100'],
+    dy: ['Dividend Yield (estimado)', 'Earning Yield × payout médio.', 'Se a empresa pagasse 100% do lucro em dividendos, o DY seria igual ao EY. Como paga apenas o payout médio, o DY é essa fração do EY.', 'DY (%) = EY × (Payout Médio ÷ 100)'],
+    pb_cru: ['Payback Cru', '100 ÷ earning yield, em anos.', 'Tempo para o lucro, sem nenhum crescimento, devolver o valor investido. Dá o mesmo número do P/L.', 'Payback Cru = 100 ÷ EY (%)'],
+    pb_cresc: ['Payback por Crescimento', 'Anos para o lucro, crescendo a g ao ano, pagar o valor de mercado.', 'Em vez de lucro constante, o lucro cresce à taxa de crescimento aplicada (g). Somam-se os lucros de cada ano até igualar o valor de mercado. Com g = 0 o resultado é igual ao Payback Cru.', 'Anos = ln(1 + g × P/L) ÷ ln(1 + g)\n(g em decimal, P/L em anos)'],
+    pb_req: ['Crescimento Esperado', 'Crescimento anual necessário para o payback alvo.', 'Encontra, por aproximações sucessivas, a taxa g para a qual o lucro acumulado em N anos (padrão 10) iguala o valor de mercado. Se o P/L já é menor que N, o resultado é negativo: a empresa pode até encolher e ainda se pagar no prazo.', 'Encontrar g tal que:\nP/L = ((1 + g)^N − 1) ÷ g'],
 };
 const q = k => `<button type="button" class="q" data-h="${k}" aria-label="Como é calculado">?</button>`;
 
@@ -127,6 +135,23 @@ function fillForm(inputs) {
     });
 }
 
+/* ---------- Payback ---------- */
+// Anos para o lucro acumulado, crescendo a g% ao ano, igualar o valor de mercado (pl = VM ÷ lucro)
+function paybackGrowth(pl, g) {
+    const gr = g / 100;
+    if (Math.abs(gr) < 1e-9) return pl;
+    const x = 1 + gr * pl;
+    return (x <= 0 || gr <= -1) ? null : Math.log(x) / Math.log(1 + gr);
+}
+// Crescimento anual (%) necessário para o payback ser de n anos (bissecção)
+function requiredGrowth(pl, n) {
+    const S = g => Math.abs(g) < 1e-9 ? n : (Math.pow(1 + g, n) - 1) / g;
+    let lo = -0.99, hi = 10;
+    if (pl < S(lo) || pl > S(hi)) return null;
+    for (let i = 0; i < 100; i++) { const m = (lo + hi) / 2; if (S(m) < pl) lo = m; else hi = m; }
+    return (lo + hi) / 2 * 100;
+}
+
 /* ---------- Cálculo (função pura: recebe os inputs, devolve tudo) ---------- */
 function compute(r) {
     const cot = N(r.cotacao), n = N(r.n_papeis), pat = N(r.patrimonio_atual), roe = N(r.roe_norm);
@@ -154,7 +179,16 @@ function compute(r) {
     const futBruto = lpaA * Math.pow(1 + g / 100, anos) * plHist;
     const levels = [15, 12, 10, 8, 6];
 
+    const vm = cot * n;
+    const plV = (vm > 0 && lucA > 0) ? vm / lucA : null;
+    const ey = plV === null ? null : lucA / vm * 100;
+    const alvo = N(r.res_payback_alvo) || 10;
+
     return {
+        vm, plV, ey, alvo, dy: ey === null ? null : ey * pay / 100,
+        pbCru: ey === null ? null : 100 / ey,
+        pbG: plV === null ? null : paybackGrowth(plV, g),
+        gReq: plV === null ? null : requiredGrowth(plV, alvo),
         ticker: r.ticker || 'Ação', cot, n, pat, roe, pay, cagr, gType: r.growth_type === 'cagr' ? 'CAGR' : 'SGR',
         dpaHist, plHist, y, g, K, anos, risco,
         derived: { lucro_atual: lucA, lucro_proj: lucP, sgr: g, patrimonio_proj: patP, lpa_atual: lpaA, lpa_proj: lpaP, vpa_atual: vpaA, vpa_proj: vpaP, pl_atual: plA, dpa_proj: dpaP, graham_constante: K },
@@ -187,6 +221,7 @@ function calcularTudo() {
     document.getElementById('res_ticker').textContent = vData.ticker;
     document.getElementById('res_cotacao').textContent = vData.cot > 0 ? brl(vData.cot) : 'N/A';
     renderCards();
+    renderPayback();
     renderPyramids();
     if (isFirstCalc) { switchTab('results'); isFirstCalc = false; }
 }
@@ -222,6 +257,21 @@ function renderCards() {
         card('justo_a', 'Preço Justo (P/L médio)', d.jA, 'Usando LPA atual', '#b8872b') +
         card('justo_p', 'Preço Justo (P/L médio + LPA proj.)', d.jP, 'Usando LPA projetivo', '#b8872b') +
         `<div class="result-card wide" style="--c:#c2410c"><div><h4>Alvo do múltiplo futuro (${d.anos} anos) a valor presente${q('futuro')}</h4><div class="value">${brl(d.futVP)}</div>${margin(d.futVP, d.cot)}<span class="sub">Descontado à taxa de risco de ${d.risco.toFixed(2)}%</span></div><div class="side"><h4>Preço bruto no futuro</h4><div class="value" style="font-size:1.4rem">${brl(d.futBruto)}</div></div></div>`;
+}
+function renderPayback() {
+    const d = vData;
+    const f = (v, u, dec = 2) => v === null ? 'N/A' : v.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + u;
+    const t = (k, label, val, sub = '', cls = '') => `<div class="pb-tile ${cls}"><h4>${label}${q(k)}</h4><div class="value">${val}</div>${sub}</div>`;
+    const vs = d.gReq === null ? '' : `<span class="chip ${d.g >= d.gReq ? 'up' : 'down'}">${d.g >= d.gReq ? 'g aplicado já supera' : 'exige mais que o g aplicado'} (${f(d.g, '%')})</span>`;
+    document.getElementById('pb_grid').innerHTML =
+        t('vm', 'Valor de mercado', brl(d.vm), '<span class="sub">Cotação × nº de papéis</span>') +
+        t('pb_lucro', 'Lucro líquido atual', brl(d.lucA)) +
+        t('pb_pl', 'P/L atual', f(d.plV, ' anos')) +
+        t('ey', 'Earning yield', f(d.ey, '%')) +
+        t('dy', 'Dividend yield', f(d.dy, '%'), `<span class="sub">Com payout médio de ${f(d.pay, '%')}</span>`) +
+        t('pb_cru', 'Payback cru', f(d.pbCru, ' anos'), '<span class="sub">100 ÷ earning yield</span>') +
+        t('pb_cresc', 'Payback por crescimento', f(d.pbG, ' anos'), `<span class="sub">Com g = ${f(d.g, '%')} ao ano</span>`) +
+        t('pb_req', `Cresc. esperado (payback de ${f(d.alvo, '', 0)} anos)`, f(d.gReq, '% ao ano'), vs, 'key');
 }
 function renderPyramids() {
     const lv = (arr) => arr.map((v, i) => `<div class="pyramid-level pyr-${vData.levels[i]}">${brl(v)}<span>Yield ${vData.levels[i]}%</span></div>`).join('');
@@ -315,7 +365,11 @@ const inputCols = () => [
     ['CAGR (%)', c => c.cagr, '0.00'], ['Base de crescimento', c => c.gType], ['g aplicado (%)', c => c.g, '0.00'],
     ['DPA hist.', c => c.dpaHist, MONEY], ['P/L médio', c => c.plHist, '0.00'], ['Taxa Y (%)', c => c.y, '0.00'],
     ['Lucro atual', c => c.lucA, MONEY], ['Lucro proj.', c => c.lucP, MONEY],
-    ['LPA atual', c => c.lpaA, MONEY], ['LPA proj.', c => c.lpaP, MONEY], ['VPA atual', c => c.vpaA, MONEY], ['VPA proj.', c => c.vpaP, MONEY]
+    ['LPA atual', c => c.lpaA, MONEY], ['LPA proj.', c => c.lpaP, MONEY], ['VPA atual', c => c.vpaA, MONEY], ['VPA proj.', c => c.vpaP, MONEY],
+    ['Valor de mercado', c => c.vm, MONEY], ['P/L (anos)', c => c.plV === null ? 'N/A' : c.plV, '0.00'],
+    ['Earning yield (%)', c => c.ey === null ? 'N/A' : c.ey, '0.00'], ['DY estimado (%)', c => c.dy === null ? 'N/A' : c.dy, '0.00'],
+    ['Payback cru (anos)', c => c.pbCru === null ? 'N/A' : c.pbCru, '0.00'], ['Payback por cresc. (anos)', c => c.pbG === null ? 'N/A' : c.pbG, '0.00'],
+    ['Cresc. esperado p/ payback alvo (%)', c => c.gReq === null ? 'N/A' : c.gReq, '0.00']
 ].map(([h, f, fm]) => ({ g: 'Dados de entrada e métricas', h, f, fm, k: '14211C', w: 18, bold: h === 'Ticker' }));
 
 function fillSheet(ws, cols, list, legend) {
