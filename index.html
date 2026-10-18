@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuation & Preço Teto</title>
+    <title>Valuation & Preço Teto - Ações e FIIs de Tijolo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -20,113 +20,200 @@
     </header>
 
     <main>
+        <!-- Menu de Seleção Inicial de Ativo -->
+        <section id="asset-type-selector" class="card asset-selector-card">
+            <h3>Selecione o Tipo de Ativo</h3>
+            <p class="muted">Escolha a classe do ativo para carregar os parâmetros e fórmulas adequados:</p>
+            <div class="asset-type-buttons">
+                <button type="button" class="btn-asset active" id="btn-type-acoes" onclick="setAssetType('acoes')">
+                    <span class="icon">📈</span>
+                    <span class="title">Ações</span>
+                    <span class="desc">Graham, Bazin, Múltiplos, Payback e PEG Ratio</span>
+                </button>
+                <button type="button" class="btn-asset" id="btn-type-fii" onclick="setAssetType('fii')">
+                    <span class="icon">🏢</span>
+                    <span class="title">FII de Tijolo</span>
+                    <span class="desc">Bazin, P/VP (1.00 e 1.05) e Modelo de Gordon (DDM)</span>
+                </button>
+            </div>
+        </section>
+
         <nav class="tabs">
             <button class="tab-btn active" data-tab="inputs" onclick="switchTab('inputs')">Dados de entrada</button>
             <button class="tab-btn" data-tab="results" onclick="switchTab('results')">Resultados e preços alvo</button>
             <button class="tab-btn" data-tab="portfolio" onclick="switchTab('portfolio')">Carteira <span id="port_count" class="count">0</span></button>
         </nav>
 
+        <!-- Formulários de Entrada -->
         <section id="inputs" class="tab-content active">
-            <div class="card note">
-                Preencha os <strong>dados básicos</strong>. As métricas derivadas (lucro, patrimônio projetado, LPA, VPA, crescimento) são calculadas sozinhas, e cada uma tem um <span class="q demo">?</span> que explica a conta.
-            </div>
+            
+            <!-- FORMULÁRIO DE AÇÕES -->
+            <div id="form-acoes">
+                <div class="card note">
+                    Preencha os <strong>dados básicos da ação</strong>. As métricas derivadas são calculadas automaticamente.
+                </div>
 
-            <div class="card basic-data">
-                <h3>Dados básicos</h3>
-                <div class="grid-inputs">
-                    <div class="input-group"><label>Ticker da ação</label><input type="text" id="ticker" placeholder="Ex: VULC3"></div>
-                    <div class="input-group"><label>Cotação atual (R$)</label><input type="number" id="cotacao" step="0.01" oninput="autoCalc()"></div>
-                    <div class="input-group"><label>Número de papéis (ações)</label><input type="number" id="n_papeis" step="1" oninput="autoCalc()"></div>
-                    <div class="input-group"><label>Patrimônio líquido atual (R$)</label><input type="number" id="patrimonio_atual" step="0.01" oninput="autoCalc()"></div>
-                    <div class="input-group"><label>ROE normalizado (%)</label><input type="number" id="roe_norm" step="0.01" oninput="autoCalc()"></div>
-                    <div class="input-group"><label>Payout médio histórico/norm. (%)</label><input type="number" id="payout" step="0.01" oninput="autoCalc()"></div>
-                    <div class="input-group"><label>CAGR histórico, 5 anos (%)</label><input type="number" id="cagr" step="0.01" oninput="autoCalc()"></div>
-                    <div class="input-group">
-                        <label>Base de crescimento (lucro proj. e PEG)</label>
-                        <select id="growth_type" onchange="autoCalc()">
-                            <option value="sgr">SGR (ROE Norm. x (1 - Payout))</option>
-                            <option value="cagr">CAGR (histórico)</option>
-                        </select>
+                <div class="card basic-data">
+                    <h3>Dados básicos (Ação)</h3>
+                    <div class="grid-inputs">
+                        <div class="input-group"><label>Ticker da ação</label><input type="text" id="ticker" placeholder="Ex: VULC3"></div>
+                        <div class="input-group"><label>Cotação atual (R$)</label><input type="number" id="cotacao" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Número de papéis (ações)</label><input type="number" id="n_papeis" step="1" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Patrimônio líquido atual (R$)</label><input type="number" id="patrimonio_atual" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>ROE normalizado (%)</label><input type="number" id="roe_norm" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Payout médio histórico/norm. (%)</label><input type="number" id="payout" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>CAGR histórico, 5 anos (%)</label><input type="number" id="cagr" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group">
+                            <label>Base de crescimento (lucro proj. e PEG)</label>
+                            <select id="growth_type" onchange="autoCalc()">
+                                <option value="sgr">SGR (ROE Norm. x (1 - Payout))</option>
+                                <option value="cagr">CAGR (histórico)</option>
+                            </select>
+                        </div>
+                        <div class="input-group"><label>DPA histórico médio (R$)</label><input type="number" id="dpa_hist" step="0.01"></div>
+                        <div class="input-group"><label>P/L médio histórico</label><input type="number" id="pl_hist" step="0.01"></div>
+                        <div class="input-group"><label>Taxa de juros Y (%) <small>(risco e Graham modificado)</small></label><input type="number" id="taxa_y" value="10" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Graham: P/L máx. aceitável (6 a 15)</label><input type="number" id="graham_pl" value="15" step="0.1" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Graham: P/VP máx. aceitável</label><input type="number" id="graham_pvp" value="1.5" step="0.1" oninput="autoCalc()"></div>
                     </div>
-                    <div class="input-group"><label>DPA histórico médio (R$)</label><input type="number" id="dpa_hist" step="0.01"></div>
-                    <div class="input-group"><label>P/L médio histórico</label><input type="number" id="pl_hist" step="0.01"></div>
-                    <div class="input-group"><label>Taxa de juros Y (%) <small>(risco e Graham modificado)</small></label><input type="number" id="taxa_y" value="10" step="0.01" oninput="autoCalc()"></div>
-                    <div class="input-group"><label>Graham: P/L máx. aceitável (6 a 15)</label><input type="number" id="graham_pl" value="15" step="0.1" oninput="autoCalc()"></div>
-                    <div class="input-group"><label>Graham: P/VP máx. aceitável</label><input type="number" id="graham_pvp" value="1.5" step="0.1" oninput="autoCalc()"></div>
+                </div>
+
+                <div class="card derived-data">
+                    <h3>Métricas calculadas <small>(a partir dos dados acima)</small></h3>
+                    <div class="grid-inputs">
+                        <div class="input-group"><label>Lucro líquido atual (R$)</label><input type="number" id="lucro_atual" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Lucro líquido projetivo (R$)</label><input type="number" id="lucro_proj" step="0.01" oninput="autoCalc()"></div>
+                        <div class="input-group"><label>Crescimento (g) aplicado (%)</label><input type="number" id="sgr" step="0.01" readonly></div>
+                        <div class="input-group"><label>Patrimônio líq. projetado (R$)</label><input type="number" id="patrimonio_proj" step="0.01" readonly></div>
+                        <div class="input-group"><label>LPA atual (R$)</label><input type="number" id="lpa_atual" step="0.01"></div>
+                        <div class="input-group"><label>LPA projetivo (R$)</label><input type="number" id="lpa_proj" step="0.01"></div>
+                        <div class="input-group"><label>VPA atual (R$)</label><input type="number" id="vpa_atual" step="0.01"></div>
+                        <div class="input-group"><label>VPA projetivo (R$)</label><input type="number" id="vpa_proj" step="0.01"></div>
+                        <div class="input-group"><label>P/L atual</label><input type="number" id="pl_atual" step="0.01"></div>
+                        <div class="input-group"><label>DPA projetivo (R$)</label><input type="number" id="dpa_proj" step="0.01"></div>
+                        <div class="input-group"><label>Constante de Graham</label><input type="number" id="graham_constante" step="0.01" readonly></div>
+                    </div>
+                    <button class="btn primary wide" onclick="calcularTudo()">Gerar resultados e preços alvo</button>
                 </div>
             </div>
 
-            <div class="card derived-data">
-                <h3>Métricas calculadas <small>(a partir dos dados acima)</small></h3>
-                <div class="grid-inputs">
-                    <div class="input-group"><label>Lucro líquido atual (R$)</label><input type="number" id="lucro_atual" step="0.01" oninput="autoCalc()"></div>
-                    <div class="input-group"><label>Lucro líquido projetivo (R$)</label><input type="number" id="lucro_proj" step="0.01" oninput="autoCalc()"></div>
-                    <div class="input-group"><label>Crescimento (g) aplicado (%)</label><input type="number" id="sgr" step="0.01" readonly></div>
-                    <div class="input-group"><label>Patrimônio líq. projetado (R$)</label><input type="number" id="patrimonio_proj" step="0.01" readonly></div>
-                    <div class="input-group"><label>LPA atual (R$)</label><input type="number" id="lpa_atual" step="0.01"></div>
-                    <div class="input-group"><label>LPA projetivo (R$)</label><input type="number" id="lpa_proj" step="0.01"></div>
-                    <div class="input-group"><label>VPA atual (R$)</label><input type="number" id="vpa_atual" step="0.01"></div>
-                    <div class="input-group"><label>VPA projetivo (R$)</label><input type="number" id="vpa_proj" step="0.01"></div>
-                    <div class="input-group"><label>P/L atual</label><input type="number" id="pl_atual" step="0.01"></div>
-                    <div class="input-group"><label>DPA projetivo (R$)</label><input type="number" id="dpa_proj" step="0.01"></div>
-                    <div class="input-group"><label>Constante de Graham</label><input type="number" id="graham_constante" step="0.01" readonly></div>
+            <!-- FORMULÁRIO DE FII DE TIJOLO -->
+            <div id="form-fii" style="display: none;">
+                <div class="card note">
+                    Preencha os <strong>dados do FII de Tijolo</strong>. Os preços teto serão calculados por Bazin (histórico/projetado), P/VP e Modelo de Gordon.
                 </div>
-                <button class="btn primary wide" onclick="calcularTudo()">Gerar resultados e preços alvo</button>
+
+                <div class="card basic-data">
+                    <h3>Dados Básicos do FII</h3>
+                    <div class="grid-inputs">
+                        <div class="input-group"><label>Ticker do FII</label><input type="text" id="fii_ticker" placeholder="Ex: HGLG11"></div>
+                        <div class="input-group"><label>Cotação atual (R$)</label><input type="number" id="fii_cotacao" step="0.01" oninput="autoCalcFII()"></div>
+                        <div class="input-group"><label>VPA (Valor Patrimonial por Cota) (R$)</label><input type="number" id="fii_vpa" step="0.01" oninput="autoCalcFII()"></div>
+                        <div class="input-group"><label>Média mensal dos últimos dividendos (R$/cota)</label><input type="number" id="fii_div_mensal" step="0.01" oninput="autoCalcFII()"></div>
+                        <div class="input-group"><label>Rendimento anualizado histórico (R$/cota)</label><input type="number" id="fii_div_hist_anual" step="0.01" oninput="autoCalcFII()"></div>
+                    </div>
+                </div>
+
+                <div class="card derived-data">
+                    <h3>Parâmetros de Projeção e Modelo de Gordon</h3>
+                    <div class="grid-inputs">
+                        <div class="input-group"><label>Expectativa de Reajuste dos Contratos / Inflação (%)</label><input type="number" id="fii_reajuste_pct" value="4.5" step="0.01" oninput="autoCalcFII()"></div>
+                        <div class="input-group"><label>Provento Projetado D1 Próx. 12m (R$/cota)</label><input type="number" id="fii_d1_proj" step="0.01" readonly></div>
+                        <div class="input-group"><label>Taxa de Desconto / Retorno Exigido K (%)</label><input type="number" id="fii_taxa_k" value="10.5" step="0.01" oninput="autoCalcFII()"></div>
+                        <div class="input-group"><label>Taxa de Crescimento Perpétuo g - Inflação/IPCA (%)</label><input type="number" id="fii_taxa_g" value="4.5" step="0.01" oninput="autoCalcFII()"></div>
+                    </div>
+                    <button class="btn primary wide" onclick="calcularTudoFII()">Gerar resultados e preços alvo do FII</button>
+                </div>
             </div>
+
         </section>
 
+        <!-- Resultados e Preços Alvo -->
         <section id="results" class="tab-content">
-            <div class="results-header">
-                <div>
-                    <h2><span id="res_ticker">Ação</span></h2>
-                    <p class="muted">Cotação atual: <b id="res_cotacao">N/A</b></p>
-                </div>
-                <div class="actions">
-                    <button class="btn ghost-dark" onclick="saveCurrent()">Salvar na carteira</button>
-                    <button class="btn accent" onclick="exportExcel()">Baixar Excel</button>
-                </div>
-            </div>
-
-            <div class="card scenario">
-                <h3>Cenário do múltiplo futuro</h3>
-                <div class="grid-inputs">
-                    <div class="input-group"><label>Projetar em anos (padrão 5)</label><input type="number" id="res_anos" value="5" step="1" oninput="calcularTudo()"></div>
-                    <div class="input-group"><label>Taxa de risco de desconto (%)</label><input type="number" id="res_risco" step="0.01" oninput="calcularTudo()"></div>
-                </div>
-            </div>
-
-            <div class="results-grid" id="results_container"></div>
-
-            <div class="card payback">
-                <div class="pb-head">
+            <!-- RESULTADOS AÇÕES -->
+            <div id="results-acoes">
+                <div class="results-header">
                     <div>
-                        <h3>Payback</h3>
-                        <p class="muted">Em quantos anos o lucro devolve o valor de mercado da empresa.</p>
+                        <h2><span id="res_ticker">Ação</span></h2>
+                        <p class="muted">Cotação atual: <b id="res_cotacao">N/A</b></p>
                     </div>
-                    <div class="input-group"><label>Payback alvo (anos)</label><input type="number" id="res_payback_alvo" value="10" step="0.5" oninput="calcularTudo()"></div>
+                    <div class="actions">
+                        <button class="btn ghost-dark" onclick="saveCurrent()">Salvar na carteira</button>
+                        <button class="btn accent" onclick="exportExcel()">Baixar Excel</button>
+                    </div>
                 </div>
-                <div class="pb-grid" id="pb_grid"></div>
+
+                <div class="card scenario">
+                    <h3>Cenário do múltiplo futuro</h3>
+                    <div class="grid-inputs">
+                        <div class="input-group"><label>Projetar em anos (padrão 5)</label><input type="number" id="res_anos" value="5" step="1" oninput="calcularTudo()"></div>
+                        <div class="input-group"><label>Taxa de risco de desconto (%)</label><input type="number" id="res_risco" step="0.01" oninput="calcularTudo()"></div>
+                    </div>
+                </div>
+
+                <div class="results-grid" id="results_container"></div>
+
+                <div class="card payback">
+                    <div class="pb-head">
+                        <div>
+                            <h3>Payback</h3>
+                            <p class="muted">Em quantos anos o lucro devolve o valor de mercado da empresa.</p>
+                        </div>
+                        <div class="input-group"><label>Payback alvo (anos)</label><input type="number" id="res_payback_alvo" value="10" step="0.5" oninput="calcularTudo()"></div>
+                    </div>
+                    <div class="pb-grid" id="pb_grid"></div>
+                </div>
+
+                <div class="duo">
+                    <div class="card">
+                        <h3>Bazin: teto histórico <button type="button" class="q" data-h="bazin_h" aria-label="Como é calculated">?</button></h3>
+                        <p class="muted">Baseado no DPA histórico médio.</p>
+                        <div class="pyramid-container" id="pyramid_hist"></div>
+                    </div>
+                    <div class="card">
+                        <h3>Bazin: teto projetivo <button type="button" class="q" data-h="bazin_p" aria-label="Como é calculado">?</button></h3>
+                        <p class="muted">Baseado no lucro e payout projetivos.</p>
+                        <div class="pyramid-container" id="pyramid_proj"></div>
+                    </div>
+                </div>
             </div>
 
-            <div class="duo">
-                <div class="card">
-                    <h3>Bazin: teto histórico <button type="button" class="q" data-h="bazin_h" aria-label="Como é calculado">?</button></h3>
-                    <p class="muted">Baseado no DPA histórico médio.</p>
-                    <div class="pyramid-container" id="pyramid_hist"></div>
+            <!-- RESULTADOS FII -->
+            <div id="results-fii" style="display: none;">
+                <div class="results-header">
+                    <div>
+                        <h2><span id="fii_res_ticker">FII</span> <small class="badge gray">FII de Tijolo</small></h2>
+                        <p class="muted">Cotação atual: <b id="fii_res_cotacao">N/A</b> | VPA: <b id="fii_res_vpa">N/A</b> | P/VP Atual: <b id="fii_res_pvp">N/A</b></p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn ghost-dark" onclick="saveCurrentFII()">Salvar na carteira</button>
+                        <button class="btn accent" onclick="exportExcelFII()">Baixar Excel</button>
+                    </div>
                 </div>
-                <div class="card">
-                    <h3>Bazin: teto projetivo <button type="button" class="q" data-h="bazin_p" aria-label="Como é calculado">?</button></h3>
-                    <p class="muted">Baseado no lucro e payout projetivos.</p>
-                    <div class="pyramid-container" id="pyramid_proj"></div>
+
+                <div class="results-grid" id="fii_results_container"></div>
+
+                <div class="duo">
+                    <div class="card">
+                        <h3>Bazin FII: Teto Histórico <button type="button" class="q" data-h="fii_bazin_h" aria-label="Como é calculado">?</button></h3>
+                        <p class="muted">Baseado no rendimento histórico anualizado.</p>
+                        <div class="pyramid-container" id="fii_pyramid_hist"></div>
+                    </div>
+                    <div class="card">
+                        <h3>Bazin FII: Teto Projetado (D1) <button type="button" class="q" data-h="fii_bazin_p" aria-label="Como é calculated">?</button></h3>
+                        <p class="muted">Baseado no provento projetado para os próximos 12 meses (D1).</p>
+                        <div class="pyramid-container" id="fii_pyramid_proj"></div>
+                    </div>
                 </div>
             </div>
         </section>
 
+        <!-- Carteira -->
         <section id="portfolio" class="tab-content">
             <div class="results-header">
                 <div>
                     <h2>Carteira</h2>
-                    <p class="muted">Todas as ações importadas ou salvas. Verde: cotação abaixo do teto.</p>
+                    <p class="muted">Todas as ações e FIIs salvos/importados. Verde: cotação abaixo do teto.</p>
                 </div>
                 <div class="actions">
                     <button class="btn accent" onclick="exportPortfolioExcel()">Baixar Excel da carteira</button>
