@@ -18,14 +18,14 @@ function setAssetType(type) {
 /* ---------- Ajuda e Explicações ---------- */
 const HELP = {
     // Ações
-    lucro_atual: ['Lucro Líquido Atual', 'Patrimônio líquido × ROE normalizado.', 'Estima o lucro anual que a empresa gera hoje, assumindo que o ROE normalizado é o retorno típico sobre o patrimônio.', 'Lucro Atual = Patrimônio Líquido × (ROE Norm. ÷ 100)'],
-    lucro_proj: ['Lucro Líquido Projetivo', 'Lucro atual crescido por 1 ano à taxa g.', 'Projeta o lucro do próximo período aplicando o crescimento escolhido (SGR ou CAGR).', 'Lucro Proj. = Lucro Atual × (1 + g ÷ 100)'],
-    sgr: ['Crescimento (g) aplicado', 'SGR ou CAGR, conforme a base escolhida.', 'O SGR é a parte do lucro que a empresa retém e reinveste.', 'SGR = ROE Norm. × (1 − Payout ÷ 100)'],
-    patrimonio_proj: ['Patrimônio Líquido Projetado', 'Patrimônio atual + lucro projetivo retido.', 'Soma ao patrimônio atual a parte do lucro projetado retida.', 'PL Proj. = PL Atual + Lucro Proj. × (1 − Payout ÷ 100)'],
-    lpa_atual: ['LPA Atual', 'Lucro atual dividido pelo número de ações.', 'Lucro por ação.', 'LPA Atual = Lucro Atual ÷ Nº de Papéis'],
-    lpa_proj: ['LPA Projetivo', 'Lucro projetivo dividido pelo número de ações.', 'Lucro por ação esperado.', 'LPA Proj. = Lucro Proj. ÷ Nº de Papéis'],
-    vpa_atual: ['VPA Atual', 'Patrimônio atual dividido pelo número de ações.', 'Valor patrimonial por ação.', 'VPA Atual = PL Atual ÷ Nº de Papéis'],
-    vpa_proj: ['VPA Projetivo', 'Patrimônio projetado dividido pelo número de ações.', 'Valor patrimonial por ação projetado.', 'VPA Proj. = PL Proj. ÷ Nº de Papéis'],
+    lucro_atual: ['Lucro Líquido Atual', 'Patrimônio líquido × ROE normalizado[cite: 1, 2].', 'Estima o lucro anual que a empresa gera hoje, assumindo que o ROE normalizado é o retorno típico sobre o patrimônio[cite: 1, 2].', 'Lucro Atual = Patrimônio Líquido × (ROE Norm. ÷ 100)'],
+    lucro_proj: ['Lucro Líquido Projetivo', 'Lucro atual crescido por 1 ano à taxa g[cite: 2].', 'Projeta o lucro do próximo período aplicando o crescimento escolhido (SGR ou CAGR)[cite: 1, 2].', 'Lucro Proj. = Lucro Atual × (1 + g ÷ 100)'],
+    sgr: ['Crescimento (g) aplicado', 'SGR ou CAGR, conforme a base escolhida[cite: 1, 2].', 'O SGR é a parte do lucro que a empresa retém e reinveste[cite: 1, 2].', 'SGR = ROE Norm. × (1 − Payout ÷ 100)'],
+    patrimonio_proj: ['Patrimônio Líquido Projetado', 'Patrimônio atual + lucro projetivo retido[cite: 2].', 'Soma ao patrimônio atual a parte do lucro projetado retida[cite: 2].', 'PL Proj. = PL Atual + Lucro Proj. × (1 − Payout ÷ 100)'],
+    lpa_atual: ['LPA Atual', 'Lucro atual dividido pelo número de ações[cite: 2].', 'Lucro por ação[cite: 2].', 'LPA Atual = Lucro Atual ÷ Nº de Papéis'],
+    lpa_proj: ['LPA Projetivo', 'Lucro projetivo dividido pelo número de ações[cite: 2].', 'Lucro por ação esperado[cite: 2].', 'LPA Proj. = Lucro Proj. ÷ Nº de Papéis'],
+    vpa_atual: ['VPA Atual', 'Patrimônio atual dividido pelo número de ações[cite: 2].', 'Valor patrimonial por ação[cite: 2].', 'VPA Atual = PL Atual ÷ Nº de Papéis'],
+    vpa_proj: ['VPA Projetivo', 'Patrimônio projetado dividido pelo número de ações[cite: 2].', 'Valor patrimonial por ação projetado[cite: 2].', 'VPA Proj. = PL Proj. ÷ Nº de Papéis'],
     pl_atual: ['P/L Atual', 'Cotação dividida pelo LPA atual.', 'Quantos anos de lucro atual você paga ao comprar a ação.', 'P/L Atual = Cotação ÷ LPA Atual'],
     dpa_proj: ['DPA Projetivo', 'LPA projetivo vezes o payout.', 'Dividendo por ação esperado.', 'DPA Proj. = LPA Proj. × (Payout ÷ 100)'],
     graham_constante: ['Constante de Graham', 'P/L máximo × P/VP máximo.', 'Padrão 15 × 1,5 = 22,5.', 'K = P/L máx. × P/VP máx.'],
@@ -89,10 +89,10 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
 
 /* ---------- Utilitários de Formatação ---------- */
 const N = v => parseFloat(v) || 0;
-const NUM_IDS = ['n_papeis', 'cotacao', 'patrimonio_atual', 'dpa_hist', 'lucro_atual', 'lucro_proj', 'patrimonio_proj', 'lpa_atual', 'lpa_proj', 'vpa_atual', 'vpa_proj', 'dpa_proj', 'fii_cotacao', 'fii_vpa', 'fii_div_mensal', 'fii_div_hist_anual', 'fii_d1_proj'];
-const INT_IDS = ['n_papeis'];
+const NUM_IDS = ['n_papeis', 'cotacao', 'patrimonio_atual', 'dpa_hist', 'lucro_atual', 'lucro_proj', 'patrimonio_proj', 'lpa_atual', 'lpa_proj', 'vpa_atual', 'vpa_proj', 'dpa_proj', 'fii_cotacao', 'fii_patrimonio', 'fii_n_cotas', 'fii_vpa', 'fii_div_mensal', 'fii_div_hist_anual', 'fii_d1_proj'];
+const INT_IDS = ['n_papeis', 'fii_n_cotas'];
 const UNITS = { mil: 1e3, k: 1e3, m: 1e6, mm: 1e6, mi: 1e6, milhao: 1e6, milhoes: 1e6, b: 1e9, bi: 1e9, bilhao: 1e9, bilhoes: 1e9, t: 1e12, tri: 1e12, trilhao: 1e12, trilhoes: 1e12 };
-const BIG_IDS = ['n_papeis', 'patrimonio_atual', 'lucro_atual', 'lucro_proj'];
+const BIG_IDS = ['n_papeis', 'patrimonio_atual', 'lucro_atual', 'lucro_proj', 'fii_patrimonio', 'fii_n_cotas'];
 
 const parseBR = s => {
     s = String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
@@ -241,39 +241,40 @@ function compute(r) {
 function computeFII(r) {
     const ticker = r.fii_ticker || 'FII';
     const cot = N(r.fii_cotacao);
-    const vpa = N(r.fii_vpa);
+    const pat = N(r.fii_patrimonio);
+    const nCotas = N(r.fii_n_cotas);
+    
+    // VPA Calculado automaticamente a partir do PL e nº de cotas
+    const vpa = (pat > 0 && nCotas > 0) ? pat / nCotas : N(r.fii_vpa);
+
     const divMensal = N(r.fii_div_mensal);
     const divHistAnual = N(r.fii_div_hist_anual) || (divMensal * 12);
     const reajustePct = N(r.fii_reajuste_pct);
     const taxaK = N(r.fii_taxa_k);
     const taxaG = N(r.fii_taxa_g);
 
-    // D1 = Média mensal * 12 * (1 + reajuste/100)
     const baseAnual = divMensal * 12;
     const d1Proj = baseAnual > 0 ? baseAnual * (1 + reajustePct / 100) : N(r.fii_d1_proj);
 
-    // P/VP
     const pvpAtual = (cot > 0 && vpa > 0) ? cot / vpa : null;
     const tetoPvp100 = vpa * 1.00;
     const tetoPvp105 = vpa * 1.05;
 
-    // Modelo de Gordon (DDM) -> P = D1 / (K - g)
     let gordonVal = 0;
     const kDec = taxaK / 100, gDec = taxaG / 100;
     if (kDec > gDec && d1Proj > 0) {
         gordonVal = d1Proj / (kDec - gDec);
     }
 
-    // Bazin FII
     const levels = [15, 12, 10, 8, 6];
     const bazH = levels.map(dy => divHistAnual > 0 ? divHistAnual / (dy / 100) : 0);
     const bazP = levels.map(dy => d1Proj > 0 ? d1Proj / (dy / 100) : 0);
 
     return {
         assetType: 'fii',
-        ticker, cot, vpa, divMensal, divHistAnual, reajustePct, taxaK, taxaG, d1Proj, pvpAtual,
+        ticker, cot, vpa, pat, nCotas, divMensal, divHistAnual, reajustePct, taxaK, taxaG, d1Proj, pvpAtual,
         tetoPvp100, tetoPvp105, gordonVal, bazH, bazP, levels,
-        derived: { fii_d1_proj: d1Proj }
+        derived: { fii_vpa: vpa, fii_d1_proj: d1Proj }
     };
 }
 
@@ -472,8 +473,6 @@ async function importJSON(event) {
 }
 
 /* ---------- Excel Bonito (ExcelJS) ---------- */
-const MONEY = '"R$" #,##0.00', FONT = 'Segoe UI';
-
 function exportExcel() {
     if (!vData) return toast('Gere os resultados primeiro.');
     const ticker = vData.ticker || 'Ativo';
