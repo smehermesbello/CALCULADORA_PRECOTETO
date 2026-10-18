@@ -30,6 +30,54 @@ header h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -.01em; }
 
 main { max-width: 1200px; margin: 2rem auto; padding: 0 1rem 3rem; }
 
+/* Menu de Seleção de Ativo */
+.asset-selector-card {
+    border-top: 4px solid var(--gold);
+    margin-bottom: 1.5rem;
+}
+.asset-type-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.btn-asset {
+    background: #fff;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 1.2rem;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    transition: all .2s ease;
+}
+.btn-asset:hover {
+    border-color: var(--teal);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.05);
+}
+.btn-asset.active {
+    border-color: var(--teal);
+    background: #f0f7f4;
+    box-shadow: 0 0 0 3px rgba(11,122,100,.15);
+}
+.btn-asset .icon {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+.btn-asset .title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+.btn-asset .desc {
+    font-size: .8rem;
+    color: var(--muted);
+}
+
 .tabs { display: inline-flex; gap: .3rem; padding: .3rem; background: #e0e6dd; border-radius: 12px; margin-bottom: 1.8rem; flex-wrap: wrap; }
 .tab-btn { background: none; border: none; padding: .65rem 1.3rem; font: 600 .95rem 'Manrope', sans-serif; color: var(--muted); border-radius: 9px; cursor: pointer; }
 .tab-btn.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(20,33,28,.12); }
@@ -58,7 +106,7 @@ main { max-width: 1200px; margin: 2rem auto; padding: 0 1rem 3rem; }
 .input-group input:focus, .input-group select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(11,122,100,.15); }
 .input-group input[readonly] { background: #eef0f3; color: var(--muted); font-weight: 700; }
 
-/* ícone de ajuda */
+/* Ícone de ajuda */
 .q {
     width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 1.5px solid var(--teal); background: #fff; color: var(--teal);
     font: 700 .75rem 'Manrope', sans-serif; display: inline-flex; align-items: center; justify-content: center;
