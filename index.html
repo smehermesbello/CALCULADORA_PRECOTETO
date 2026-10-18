@@ -50,7 +50,7 @@
             <!-- FORMULÁRIO DE AÇÕES -->
             <div id="form-acoes">
                 <div class="card note">
-                    Preencha os <strong>dados básicos da ação</strong>. As métricas derivadas são calculadas automaticamente.
+                    Preencha os <strong>dados básicos da ação</strong>[cite: 1, 2]. As métricas derivadas são calculadas automaticamente[cite: 1, 2].
                 </div>
 
                 <div class="card basic-data">
@@ -100,7 +100,7 @@
             <!-- FORMULÁRIO DE FII DE TIJOLO -->
             <div id="form-fii" style="display: none;">
                 <div class="card note">
-                    Preencha os <strong>dados do FII de Tijolo</strong>. Os preços teto serão calculados por Bazin (histórico/projetado), P/VP e Modelo de Gordon.
+                    Preencha os <strong>dados do FII de Tijolo</strong>. O VPA será calculado automaticamente com base no patrimônio líquido e número de cotas[cite: 1, 2].
                 </div>
 
                 <div class="card basic-data">
@@ -108,7 +108,9 @@
                     <div class="grid-inputs">
                         <div class="input-group"><label>Ticker do FII</label><input type="text" id="fii_ticker" placeholder="Ex: HGLG11"></div>
                         <div class="input-group"><label>Cotação atual (R$)</label><input type="number" id="fii_cotacao" step="0.01" oninput="autoCalcFII()"></div>
-                        <div class="input-group"><label>VPA (Valor Patrimonial por Cota) (R$)</label><input type="number" id="fii_vpa" step="0.01" oninput="autoCalcFII()"></div>
+                        <div class="input-group"><label>Patrimônio líquido do FII (R$)</label><input type="number" id="fii_patrimonio" step="0.01" oninput="autoCalcFII()"></div>
+                        <div class="input-group"><label>Número de cotas</label><input type="number" id="fii_n_cotas" step="1" oninput="autoCalcFII()"></div>
+                        <div class="input-group"><label>VPA calculado (R$)</label><input type="number" id="fii_vpa" step="0.01" readonly></div>
                         <div class="input-group"><label>Média mensal dos últimos dividendos (R$/cota)</label><input type="number" id="fii_div_mensal" step="0.01" oninput="autoCalcFII()"></div>
                         <div class="input-group"><label>Rendimento anualizado histórico (R$/cota)</label><input type="number" id="fii_div_hist_anual" step="0.01" oninput="autoCalcFII()"></div>
                     </div>
@@ -166,7 +168,7 @@
 
                 <div class="duo">
                     <div class="card">
-                        <h3>Bazin: teto histórico <button type="button" class="q" data-h="bazin_h" aria-label="Como é calculated">?</button></h3>
+                        <h3>Bazin: teto histórico <button type="button" class="q" data-h="bazin_h" aria-label="Como é calculado">?</button></h3>
                         <p class="muted">Baseado no DPA histórico médio.</p>
                         <div class="pyramid-container" id="pyramid_hist"></div>
                     </div>
@@ -200,7 +202,7 @@
                         <div class="pyramid-container" id="fii_pyramid_hist"></div>
                     </div>
                     <div class="card">
-                        <h3>Bazin FII: Teto Projetado (D1) <button type="button" class="q" data-h="fii_bazin_p" aria-label="Como é calculated">?</button></h3>
+                        <h3>Bazin FII: Teto Projetado (D1) <button type="button" class="q" data-h="fii_bazin_p" aria-label="Como é calculado">?</button></h3>
                         <p class="muted">Baseado no provento projetado para os próximos 12 meses (D1).</p>
                         <div class="pyramid-container" id="fii_pyramid_proj"></div>
                     </div>
