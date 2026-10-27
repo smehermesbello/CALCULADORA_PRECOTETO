@@ -18,14 +18,14 @@ function setAssetType(type) {
 /* ---------- Ajuda e Explicações ---------- */
 const HELP = {
     // Ações
-    lucro_atual: ['Lucro Líquido Atual', 'Patrimônio líquido × ROE normalizado[cite: 1, 2].', 'Estima o lucro anual que a empresa gera hoje, assumindo que o ROE normalizado é o retorno típico sobre o patrimônio[cite: 1, 2].', 'Lucro Atual = Patrimônio Líquido × (ROE Norm. ÷ 100)'],
-    lucro_proj: ['Lucro Líquido Projetivo', 'Lucro atual crescido por 1 ano à taxa g[cite: 2].', 'Projeta o lucro do próximo período aplicando o crescimento escolhido (SGR ou CAGR)[cite: 1, 2].', 'Lucro Proj. = Lucro Atual × (1 + g ÷ 100)'],
-    sgr: ['Crescimento (g) aplicado', 'SGR ou CAGR, conforme a base escolhida[cite: 1, 2].', 'O SGR é a parte do lucro que a empresa retém e reinveste[cite: 1, 2].', 'SGR = ROE Norm. × (1 − Payout ÷ 100)'],
-    patrimonio_proj: ['Patrimônio Líquido Projetado', 'Patrimônio atual + lucro projetivo retido[cite: 2].', 'Soma ao patrimônio atual a parte do lucro projetado retida[cite: 2].', 'PL Proj. = PL Atual + Lucro Proj. × (1 − Payout ÷ 100)'],
-    lpa_atual: ['LPA Atual', 'Lucro atual dividido pelo número de ações[cite: 2].', 'Lucro por ação[cite: 2].', 'LPA Atual = Lucro Atual ÷ Nº de Papéis'],
-    lpa_proj: ['LPA Projetivo', 'Lucro projetivo dividido pelo número de ações[cite: 2].', 'Lucro por ação esperado[cite: 2].', 'LPA Proj. = Lucro Proj. ÷ Nº de Papéis'],
-    vpa_atual: ['VPA Atual', 'Patrimônio atual dividido pelo número de ações[cite: 2].', 'Valor patrimonial por ação[cite: 2].', 'VPA Atual = PL Atual ÷ Nº de Papéis'],
-    vpa_proj: ['VPA Projetivo', 'Patrimônio projetado dividido pelo número de ações[cite: 2].', 'Valor patrimonial por ação projetado[cite: 2].', 'VPA Proj. = PL Proj. ÷ Nº de Papéis'],
+    lucro_atual: ['Lucro Líquido Atual', 'Patrimônio líquido × ROE normalizado.', 'Estima o lucro anual que a empresa gera hoje, assumindo que o ROE normalizado é o retorno típico sobre o patrimônio.', 'Lucro Atual = Patrimônio Líquido × (ROE Norm. ÷ 100)'],
+    lucro_proj: ['Lucro Líquido Projetivo', 'Lucro atual crescido por 1 ano à taxa g.', 'Projeta o lucro do próximo período aplicando o crescimento escolhido (SGR ou CAGR).', 'Lucro Proj. = Lucro Atual × (1 + g ÷ 100)'],
+    sgr: ['Crescimento (g) aplicado', 'SGR ou CAGR, conforme a base escolhida.', 'O SGR é a parte do lucro que a empresa retém e reinveste.', 'SGR = ROE Norm. × (1 − Payout ÷ 100)'],
+    patrimonio_proj: ['Patrimônio Líquido Projetado', 'Patrimônio atual + lucro projetivo retido.', 'Soma ao patrimônio atual a parte do lucro projetado retida.', 'PL Proj. = PL Atual + Lucro Proj. × (1 − Payout ÷ 100)'],
+    lpa_atual: ['LPA Atual', 'Lucro atual dividido pelo número de ações.', 'Lucro por ação.', 'LPA Atual = Lucro Atual ÷ Nº de Papéis'],
+    lpa_proj: ['LPA Projetivo', 'Lucro projetivo dividido pelo número de ações.', 'Lucro por ação esperado.', 'LPA Proj. = Lucro Proj. ÷ Nº de Papéis'],
+    vpa_atual: ['VPA Atual', 'Patrimônio atual dividido pelo número de ações.', 'Valor patrimonial por ação.', 'VPA Atual = PL Atual ÷ Nº de Papéis'],
+    vpa_proj: ['VPA Projetivo', 'Patrimônio projetado dividido pelo número de ações.', 'Valor patrimonial por ação projetado.', 'VPA Proj. = PL Proj. ÷ Nº de Papéis'],
     pl_atual: ['P/L Atual', 'Cotação dividida pelo LPA atual.', 'Quantos anos de lucro atual você paga ao comprar a ação.', 'P/L Atual = Cotação ÷ LPA Atual'],
     dpa_proj: ['DPA Projetivo', 'LPA projetivo vezes o payout.', 'Dividendo por ação esperado.', 'DPA Proj. = LPA Proj. × (Payout ÷ 100)'],
     graham_constante: ['Constante de Graham', 'P/L máximo × P/VP máximo.', 'Padrão 15 × 1,5 = 22,5.', 'K = P/L máx. × P/VP máx.'],
@@ -147,10 +147,49 @@ function toast(msg) {
     t.textContent = msg; t.classList.add('on');
     clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 3200);
 }
-function switchTab(id) {
+function switchTab(id, scroll = false) {
+    // Ao abrir a aba de resultados, sempre recalcula com os dados atuais do formulário
+    if (id === 'results') { if (currentAssetType === 'fii') calcularTudoFII(); else calcularTudo(); }
     document.querySelectorAll('.tab-content').forEach(el => el.classList.toggle('active', el.id === id));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+    if (scroll) requestAnimationFrame(() => {
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        document.querySelector('.tabs').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    });
 }
+
+/* Botão "Ver resultados": calcula, abre a aba de resultados e rola até ela */
+function verResultados(btn) {
+    switchTab('results', true);
+    flash(btn);
+}
+
+/* ---------- Feedback visual dos botões ---------- */
+function flash(btn, ms = 1400) {
+    if (!btn) return;
+    btn.classList.add('is-done');
+    clearTimeout(btn._f); btn._f = setTimeout(() => btn.classList.remove('is-done'), ms);
+}
+async function withBusy(btn, fn) {
+    if (btn) { if (btn.classList.contains('is-busy')) return; btn.classList.add('is-busy'); }
+    await new Promise(r => setTimeout(r, 80)); // deixa o navegador desenhar o "carregando"
+    let ok = true;
+    try { ok = (await fn()) !== false; } catch (err) { console.error(err); toast('Não foi possível gerar o arquivo.'); ok = false; }
+    if (btn) { btn.classList.remove('is-busy'); if (ok) flash(btn); }
+}
+document.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.btn, .btn-asset, .tab-btn, .row-btn');
+    if (!b || b.disabled) return;
+    const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2.2;
+    const sp = document.createElement('span');
+    sp.className = 'ripple';
+    sp.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+    b.appendChild(sp);
+    setTimeout(() => sp.remove(), 650);
+});
+document.addEventListener('keydown', e => {   // o "label" de importar também responde a Enter/Espaço
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('label.btn')) { e.preventDefault(); e.target.click(); }
+});
 
 /* ---------- Leitura do Formulário ---------- */
 function readForm() {
@@ -278,7 +317,7 @@ function computeFII(r) {
     };
 }
 
-let vData = null, isFirstCalc = true, portfolio = [];
+let vData = null, portfolio = [];
 
 function autoCalc() {
     if (currentAssetType === 'fii') return autoCalcFII();
@@ -309,7 +348,6 @@ function calcularTudo() {
     renderCards();
     renderPayback();
     renderPyramids();
-    if (isFirstCalc) { switchTab('results'); isFirstCalc = false; }
 }
 
 function calcularTudoFII() {
@@ -321,7 +359,6 @@ function calcularTudoFII() {
 
     renderFIICards();
     renderFIIPyramids();
-    if (isFirstCalc) { switchTab('results'); isFirstCalc = false; }
 }
 
 /* ---------- Renderização ---------- */
@@ -404,19 +441,19 @@ function upsert(inputs) {
     if (i >= 0) portfolio[i] = item; else portfolio.push(item);
 }
 
-function saveCurrent() {
+function saveCurrent(btn) {
     const r = readForm();
     if (!r.ticker) return toast('Informe o ticker antes de salvar.');
-    upsert(r); renderPortfolio(); toast(`${r.ticker} salva na carteira.`);
+    upsert(r); renderPortfolio(); flash(btn); toast(`${r.ticker} salva na carteira.`);
 }
 
-function saveCurrentFII() {
+function saveCurrentFII(btn) {
     const r = readForm();
     if (!r.fii_ticker) return toast('Informe o ticker antes de salvar.');
-    upsert(r); renderPortfolio(); toast(`${r.fii_ticker} salvo na carteira.`);
+    upsert(r); renderPortfolio(); flash(btn); toast(`${r.fii_ticker} salvo na carteira.`);
 }
 
-function loadStock(i) { fillForm(portfolio[i].inputs); if (portfolio[i].inputs.assetType === 'fii') calcularTudoFII(); else calcularTudo(); switchTab('results'); }
+function loadStock(i) { fillForm(portfolio[i].inputs); if (portfolio[i].inputs.assetType === 'fii') calcularTudoFII(); else calcularTudo(); switchTab('results', true); }
 function removeStock(i) { portfolio.splice(i, 1); renderPortfolio(); }
 function clearPortfolio() { if (portfolio.length && confirm('Remover todos os ativos da carteira?')) { portfolio = []; renderPortfolio(); } }
 
@@ -432,7 +469,7 @@ function renderPortfolio() {
             const baz6 = isFII ? c.bazP[4] : c.bazP[4];
             const mainVal = isFII ? c.gordonVal : c.gtA;
             const subVal = isFII ? c.tetoPvp105 : c.futVP;
-            return `<tr><td><span class="badge ${isFII ? 'yellow' : 'gray'}">${isFII ? 'FII' : 'Ação'}</span></td><td class="tk">${c.ticker}</td><td>${brl(c.cot)}</td>${cell(baz6, c.cot)}${cell(mainVal, c.cot)}${cell(subVal, c.cot)}<td><button onclick="loadStock(${i})">Abrir</button><button class="del" onclick="removeStock(${i})">Remover</button></td></tr>`;
+            return `<tr><td><span class="badge ${isFII ? 'yellow' : 'gray'}">${isFII ? 'FII' : 'Ação'}</span></td><td class="tk">${c.ticker}</td><td>${brl(c.cot)}</td>${cell(baz6, c.cot)}${cell(mainVal, c.cot)}${cell(subVal, c.cot)}<td><button class="row-btn" onclick="loadStock(${i})">Abrir</button><button class="row-btn del" onclick="removeStock(${i})">Remover</button></td></tr>`;
         }).join('') + '</tbody></table>';
 }
 
@@ -443,14 +480,16 @@ function download(blob, name) {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-function exportJSON() {
+function exportJSON(btn) {
     const inputs = readForm();
     const ticker = inputs.ticker || inputs.fii_ticker || 'dados';
     download(new Blob([JSON.stringify({ inputs, results: vData })], { type: 'application/json' }), `Valuation_${ticker}.json`);
+    flash(btn);
 }
-function exportPortfolioJSON() {
+function exportPortfolioJSON(btn) {
     if (!portfolio.length) return toast('A carteira está vazia.');
     download(new Blob([JSON.stringify({ stocks: portfolio.map(p => ({ inputs: p.inputs })) })], { type: 'application/json' }), 'Valuation_Carteira.json');
+    flash(btn);
 }
 async function importJSON(event) {
     const files = [...event.target.files];
@@ -468,25 +507,217 @@ async function importJSON(event) {
     renderPortfolio();
     fillForm(last); 
     if (last.assetType === 'fii') calcularTudoFII(); else calcularTudo();
-    switchTab(count > 1 ? 'portfolio' : 'results');
+    switchTab(count > 1 ? 'portfolio' : 'results', true);
     toast(`${count} ${count > 1 ? 'ativos importados' : 'ativo importado'}.`);
 }
 
-/* ---------- Excel Bonito (ExcelJS) ---------- */
-function exportExcel() {
-    if (!vData) return toast('Gere os resultados primeiro.');
-    const ticker = vData.ticker || 'Ativo';
-    toast(`Exportação gerada para ${ticker}`);
+/* ---------- Excel (ExcelJS) ----------
+   Gera .xlsx padrão (sem macros, tabelas dinâmicas ou formatação condicional),
+   que abre igual no Excel, LibreOffice e OnlyOffice.
+   Colunas A (ativo) e B (cotação atual) e as 2 linhas de cabeçalho ficam congeladas. */
+const XL = { ink: 'FF14211C', line: 'FFD9DFD6', frozen: 'FFEEF1EC', okBg: 'FFE3F4EA', okFg: 'FF0B5D4B', noBg: 'FFFCEBE9', noFg: 'FF9B2C20' };
+const GC = {   // cor de cada grupo de colunas
+    'Ativo': 'FF14211C', 'Dados básicos': 'FF0B7A64', 'Dados do FII': 'FF0B7A64', 'Métricas calculadas': 'FF6D5BD0',
+    'Projeção e Gordon': 'FF6D5BD0', 'PEG Ratio': 'FF5B6B7A', 'Preços-alvo': 'FF1D6FA5', 'Payback': 'FFB8872B',
+    'Bazin histórico': 'FF0B5D4B', 'Bazin projetivo': 'FF3F9B7F'
+};
+const FMT = { brl: '"R$" #,##0.00', num: '#,##0.00', int: '#,##0', pct: '0.00%', yrs: '0.00" anos"', x: '0.00' };
+const pos = v => (typeof v === 'number' && isFinite(v) && v > 0) ? v : null;
+const fin = v => (typeof v === 'number' && isFinite(v)) ? v : null;
+const pc = v => fin(v) === null ? null : v / 100;
+const bazCols = (g, key) => [15, 12, 10, 8, 6].map((y, i) => ({ g, h: `Teto Yield ${y}%`, w: 15, f: FMT.brl, teto: true, v: c => pos(c[key][i]) }));
+
+const STOCK_COLS = [
+    { g: 'Ativo', h: 'Ticker', w: 14, v: c => c.ticker },
+    { g: 'Ativo', h: 'Cotação atual', w: 16, f: FMT.brl, v: c => pos(c.cot) },
+
+    { g: 'Dados básicos', h: 'Valor de mercado', w: 20, f: FMT.brl, v: c => pos(c.vm) },
+    { g: 'Dados básicos', h: 'Nº de papéis', w: 16, f: FMT.int, v: c => pos(c.n) },
+    { g: 'Dados básicos', h: 'Patrimônio líquido', w: 20, f: FMT.brl, v: c => pos(c.pat) },
+    { g: 'Dados básicos', h: 'ROE normalizado', w: 14, f: FMT.pct, v: c => pc(c.roe) },
+    { g: 'Dados básicos', h: 'Payout médio', w: 13, f: FMT.pct, v: c => pc(c.pay) },
+    { g: 'Dados básicos', h: 'CAGR 5 anos', w: 13, f: FMT.pct, v: c => pc(c.cagr) },
+    { g: 'Dados básicos', h: 'Base de crescimento', w: 14, v: c => c.gType },
+    { g: 'Dados básicos', h: 'Crescimento (g) aplicado', w: 15, f: FMT.pct, v: c => pc(c.g) },
+    { g: 'Dados básicos', h: 'Taxa de juros Y', w: 13, f: FMT.pct, v: c => pc(c.y) },
+    { g: 'Dados básicos', h: 'P/L médio histórico', w: 14, f: FMT.x, v: c => pos(c.plHist) },
+    { g: 'Dados básicos', h: 'DPA histórico médio', w: 15, f: FMT.brl, v: c => pos(c.dpaHist) },
+    { g: 'Dados básicos', h: 'Anos de projeção', w: 13, f: FMT.int, v: c => pos(c.anos) },
+    { g: 'Dados básicos', h: 'Taxa de risco de desconto', w: 15, f: FMT.pct, v: c => pc(c.risco) },
+
+    { g: 'Métricas calculadas', h: 'Lucro líquido atual', w: 20, f: FMT.brl, v: c => pos(c.lucA) },
+    { g: 'Métricas calculadas', h: 'Lucro líquido projetivo', w: 20, f: FMT.brl, v: c => pos(c.lucP) },
+    { g: 'Métricas calculadas', h: 'LPA atual', w: 13, f: FMT.brl, v: c => pos(c.lpaA) },
+    { g: 'Métricas calculadas', h: 'LPA projetivo', w: 13, f: FMT.brl, v: c => pos(c.lpaP) },
+    { g: 'Métricas calculadas', h: 'VPA atual', w: 13, f: FMT.brl, v: c => pos(c.vpaA) },
+    { g: 'Métricas calculadas', h: 'VPA projetivo', w: 13, f: FMT.brl, v: c => pos(c.vpaP) },
+    { g: 'Métricas calculadas', h: 'P/L atual', w: 12, f: FMT.x, v: c => pos(c.derived.pl_atual) },
+    { g: 'Métricas calculadas', h: 'DPA projetivo', w: 14, f: FMT.brl, v: c => pos(c.derived.dpa_proj) },
+
+    { g: 'PEG Ratio', h: 'PEG (P/L atual)', w: 13, f: FMT.x, v: c => fin(c.pegA) },
+    { g: 'PEG Ratio', h: 'PEG (P/L médio)', w: 13, f: FMT.x, v: c => fin(c.pegH) },
+
+    { g: 'Preços-alvo', h: 'Graham tradicional (atual)', w: 16, f: FMT.brl, teto: true, v: c => pos(c.gtA) },
+    { g: 'Preços-alvo', h: 'Graham tradicional (projetado)', w: 16, f: FMT.brl, teto: true, v: c => pos(c.gtP) },
+    { g: 'Preços-alvo', h: 'Graham modificado (LPA atual)', w: 16, f: FMT.brl, teto: true, v: c => pos(c.gmA) },
+    { g: 'Preços-alvo', h: 'Graham modificado (LPA proj.)', w: 16, f: FMT.brl, teto: true, v: c => pos(c.gmP) },
+    { g: 'Preços-alvo', h: 'Preço justo (P/L médio)', w: 16, f: FMT.brl, teto: true, v: c => pos(c.jA) },
+    { g: 'Preços-alvo', h: 'Preço justo (LPA proj.)', w: 16, f: FMT.brl, teto: true, v: c => pos(c.jP) },
+    { g: 'Preços-alvo', h: 'Alvo múltiplo futuro (valor presente)', w: 18, f: FMT.brl, teto: true, v: c => pos(c.futVP) },
+
+    { g: 'Payback', h: 'Earning yield', w: 13, f: FMT.pct, v: c => pc(c.ey) },
+    { g: 'Payback', h: 'Dividend yield', w: 13, f: FMT.pct, v: c => pc(c.dy) },
+    { g: 'Payback', h: 'Payback cru', w: 14, f: FMT.yrs, v: c => fin(c.pbCru) },
+    { g: 'Payback', h: 'Payback por crescimento', w: 15, f: FMT.yrs, v: c => fin(c.pbG) },
+    { g: 'Payback', h: 'Payback alvo (anos)', w: 13, f: FMT.num, v: c => fin(c.alvo) },
+    { g: 'Payback', h: 'Cresc. esperado p/ payback alvo', w: 16, f: FMT.pct, v: c => pc(c.gReq) },
+
+    ...bazCols('Bazin histórico', 'bazH'),
+    ...bazCols('Bazin projetivo', 'bazP')
+];
+
+const FII_COLS = [
+    { g: 'Ativo', h: 'Ticker', w: 14, v: c => c.ticker },
+    { g: 'Ativo', h: 'Cotação atual', w: 16, f: FMT.brl, v: c => pos(c.cot) },
+
+    { g: 'Dados do FII', h: 'VPA', w: 14, f: FMT.brl, v: c => pos(c.vpa) },
+    { g: 'Dados do FII', h: 'P/VP atual', w: 12, f: FMT.x, v: c => fin(c.pvpAtual) },
+    { g: 'Dados do FII', h: 'Patrimônio líquido', w: 20, f: FMT.brl, v: c => pos(c.pat) },
+    { g: 'Dados do FII', h: 'Nº de cotas', w: 16, f: FMT.int, v: c => pos(c.nCotas) },
+    { g: 'Dados do FII', h: 'Dividendo mensal médio', w: 16, f: FMT.brl, v: c => pos(c.divMensal) },
+    { g: 'Dados do FII', h: 'Rendimento anual histórico', w: 16, f: FMT.brl, v: c => pos(c.divHistAnual) },
+
+    { g: 'Projeção e Gordon', h: 'Reajuste dos contratos', w: 14, f: FMT.pct, v: c => pc(c.reajustePct) },
+    { g: 'Projeção e Gordon', h: 'Provento projetado D1', w: 16, f: FMT.brl, v: c => pos(c.d1Proj) },
+    { g: 'Projeção e Gordon', h: 'Retorno exigido K', w: 13, f: FMT.pct, v: c => pc(c.taxaK) },
+    { g: 'Projeção e Gordon', h: 'Crescimento perpétuo g', w: 14, f: FMT.pct, v: c => pc(c.taxaG) },
+
+    { g: 'Preços-alvo', h: 'Teto P/VP 1,00', w: 15, f: FMT.brl, teto: true, v: c => pos(c.tetoPvp100) },
+    { g: 'Preços-alvo', h: 'Teto P/VP 1,05', w: 15, f: FMT.brl, teto: true, v: c => pos(c.tetoPvp105) },
+    { g: 'Preços-alvo', h: 'Gordon (DDM)', w: 15, f: FMT.brl, teto: true, v: c => pos(c.gordonVal) },
+
+    ...bazCols('Bazin histórico', 'bazH'),
+    ...bazCols('Bazin projetivo', 'bazP')
+];
+
+function buildSheet(wb, name, cols, items, tab) {
+    const ws = wb.addWorksheet(name, {
+        properties: { tabColor: { argb: tab } },
+        // Congela as colunas A (ativo) e B (cotação) e as 2 linhas de cabeçalho
+        views: [{ state: 'frozen', xSplit: 2, ySplit: 2, topLeftCell: 'C3', activeCell: 'C3' }]
+    });
+    cols.forEach((c, i) => { ws.getColumn(i + 1).width = c.w || 16; });
+    const thin = { style: 'thin', color: { argb: XL.line } };
+    const border = { top: thin, left: thin, bottom: thin, right: thin };
+
+    const gRow = ws.addRow(cols.map((c, i) => (i === 0 || cols[i - 1].g !== c.g) ? c.g : null));
+    const hRow = ws.addRow(cols.map(c => c.h));
+    gRow.height = 22; hRow.height = 40;
+
+    let start = 1;                       // mescla o título de cada grupo de colunas
+    for (let i = 1; i <= cols.length; i++) {
+        if (i === cols.length || cols[i].g !== cols[start - 1].g) {
+            if (i > start) ws.mergeCells(1, start, 1, i);
+            start = i + 1;
+        }
+    }
+    cols.forEach((c, i) => {
+        const argb = GC[c.g] || XL.ink;
+        [gRow.getCell(i + 1), hRow.getCell(i + 1)].forEach((cell, k) => {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } };
+            cell.font = { name: 'Arial', bold: true, size: k === 0 ? 11 : 10, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+            cell.border = border;
+        });
+    });
+
+    items.forEach(item => {
+        const row = ws.addRow(cols.map(col => col.v(item)));
+        row.height = 20;
+        cols.forEach((col, i) => {
+            const cell = row.getCell(i + 1), val = cell.value;
+            cell.border = border;
+            cell.font = { name: 'Arial', size: 10, bold: i < 2, color: { argb: XL.ink } };
+            cell.alignment = { horizontal: i === 0 ? 'left' : (typeof val === 'string' ? 'center' : 'right'), vertical: 'middle' };
+            if (col.f) cell.numFmt = col.f;
+            if (i < 2) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL.frozen } };
+            if (col.teto && typeof val === 'number' && item.cot > 0) {   // verde = teto acima da cotação
+                const ok = val >= item.cot;
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ok ? XL.okBg : XL.noBg } };
+                cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: ok ? XL.okFg : XL.noFg } };
+            }
+        });
+    });
+
+    ws.autoFilter = { from: { row: 2, column: 1 }, to: { row: 2, column: cols.length } };
+    ws.pageSetup = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '1:2' };
+    return ws;
 }
 
-function exportExcelFII() {
-    if (!vData) return toast('Gere os resultados primeiro.');
-    toast(`Exportação do FII ${vData.ticker} gerada com sucesso.`);
+function buildLegend(wb) {
+    const ws = wb.addWorksheet('Legenda', { properties: { tabColor: { argb: 'FF6B7A72' } } });
+    ws.columns = [{ width: 18 }, { width: 85 }];
+    const font = { name: 'Arial', size: 10, color: { argb: XL.ink } };
+    const add = (a, b, fill, fg) => {
+        const r = ws.addRow([a, b]);
+        r.getCell(1).font = { ...font, bold: true, color: { argb: fg || XL.ink } };
+        r.getCell(2).font = font;
+        r.getCell(2).alignment = { wrapText: true, vertical: 'middle' };
+        if (fill) r.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+        r.height = 20;
+    };
+    const t = ws.addRow(['Legenda']); t.getCell(1).font = { name: 'Arial', size: 13, bold: true, color: { argb: XL.ink } }; t.height = 24;
+    ws.addRow([]);
+    add('Verde', 'Preço-alvo/teto igual ou acima da cotação atual (há margem).', XL.okBg, XL.okFg);
+    add('Vermelho', 'Preço-alvo/teto abaixo da cotação atual (sem margem).', XL.noBg, XL.noFg);
+    add('Colunas A e B', 'Ticker e cotação atual ficam congelados ao rolar para a direita.');
+    add('Filtros', 'A segunda linha do cabeçalho tem filtros para ordenar e filtrar os ativos.');
+    add('Gerado em', new Date().toLocaleString('pt-BR'));
 }
 
-function exportPortfolioExcel() {
+const safeName = s => String(s || 'Ativo').replace(/[^\w\-]+/g, '_');
+
+async function exportItems(items, filename) {
+    if (typeof ExcelJS === 'undefined') { toast('A biblioteca do Excel não carregou. Verifique a internet e recarregue a página.'); return false; }
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Valuation & Preço Teto';
+    wb.created = new Date();
+    const acoes = items.filter(c => c.assetType !== 'fii'), fiis = items.filter(c => c.assetType === 'fii');
+    if (acoes.length) buildSheet(wb, 'Ações', STOCK_COLS, acoes, 'FF0B7A64');
+    if (fiis.length) buildSheet(wb, 'FIIs', FII_COLS, fiis, 'FFB8872B');
+    buildLegend(wb);
+    const buf = await wb.xlsx.writeBuffer();
+    download(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
+    return true;
+}
+
+function exportExcel(btn) {
+    if (!vData || vData.assetType === 'fii') return toast('Gere os resultados primeiro.');
+    return withBusy(btn, async () => {
+        const c = compute(readForm());
+        const ok = await exportItems([c], `Valuation_${safeName(c.ticker)}.xlsx`);
+        if (ok) toast(`Excel de ${c.ticker} baixado.`);
+        return ok;
+    });
+}
+
+function exportExcelFII(btn) {
+    if (!vData || vData.assetType !== 'fii') return toast('Gere os resultados primeiro.');
+    return withBusy(btn, async () => {
+        const c = computeFII(readForm());
+        const ok = await exportItems([c], `Valuation_${safeName(c.ticker)}.xlsx`);
+        if (ok) toast(`Excel do FII ${c.ticker} baixado.`);
+        return ok;
+    });
+}
+
+function exportPortfolioExcel(btn) {
     if (!portfolio.length) return toast('A carteira está vazia.');
-    toast('Carteira exportada.');
+    return withBusy(btn, async () => {
+        const ok = await exportItems(portfolio.map(p => p.c), 'Valuation_Carteira.xlsx');
+        if (ok) toast(`Carteira baixada (${portfolio.length} ${portfolio.length > 1 ? 'ativos' : 'ativo'}).`);
+        return ok;
+    });
 }
 
 initNumFields();
