@@ -13,8 +13,8 @@
     <header>
         <h1>Valuation & Preço Teto</h1>
         <div class="actions">
-            <button class="btn ghost" onclick="exportJSON()">Exportar JSON</button>
-            <label for="import-json" class="btn ghost">Importar JSON (um ou vários)</label>
+            <button class="btn ghost" onclick="exportJSON(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5"/></svg><span>Exportar JSON</span></button>
+            <label for="import-json" class="btn ghost" tabindex="0"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9m0 0l-4 4m4-4l4 4M5 3h14"/></svg><span>Importar JSON (um ou vários)</span></label>
             <input type="file" id="import-json" accept=".json" multiple onchange="importJSON(event)" hidden>
         </div>
     </header>
@@ -50,7 +50,7 @@
             <!-- FORMULÁRIO DE AÇÕES -->
             <div id="form-acoes">
                 <div class="card note">
-                    Preencha os <strong>dados básicos da ação</strong>[cite: 1, 2]. As métricas derivadas são calculadas automaticamente[cite: 1, 2].
+                    Preencha os <strong>dados básicos da ação</strong>. As métricas derivadas são calculadas automaticamente.
                 </div>
 
                 <div class="card basic-data">
@@ -93,14 +93,14 @@
                         <div class="input-group"><label>DPA projetivo (R$)</label><input type="number" id="dpa_proj" step="0.01"></div>
                         <div class="input-group"><label>Constante de Graham</label><input type="number" id="graham_constante" step="0.01" readonly></div>
                     </div>
-                    <button class="btn primary wide" onclick="calcularTudo()">Gerar resultados e preços alvo</button>
+                    <button class="btn primary wide" onclick="verResultados(this)"><span>Ver resultados e preços alvo</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m0 0l-5-5m5 5l-5 5"/></svg></button>
                 </div>
             </div>
 
             <!-- FORMULÁRIO DE FII DE TIJOLO -->
             <div id="form-fii" style="display: none;">
                 <div class="card note">
-                    Preencha os <strong>dados do FII de Tijolo</strong>. O VPA será calculado automaticamente com base no patrimônio líquido e número de cotas[cite: 1, 2].
+                    Preencha os <strong>dados do FII de Tijolo</strong>. O VPA será calculado automaticamente com base no patrimônio líquido e número de cotas.
                 </div>
 
                 <div class="card basic-data">
@@ -124,7 +124,7 @@
                         <div class="input-group"><label>Taxa de Desconto / Retorno Exigido K (%)</label><input type="number" id="fii_taxa_k" value="10.5" step="0.01" oninput="autoCalcFII()"></div>
                         <div class="input-group"><label>Taxa de Crescimento Perpétuo g - Inflação/IPCA (%)</label><input type="number" id="fii_taxa_g" value="4.5" step="0.01" oninput="autoCalcFII()"></div>
                     </div>
-                    <button class="btn primary wide" onclick="calcularTudoFII()">Gerar resultados e preços alvo do FII</button>
+                    <button class="btn primary wide" onclick="verResultados(this)"><span>Ver resultados e preços alvo do FII</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m0 0l-5-5m5 5l-5 5"/></svg></button>
                 </div>
             </div>
 
@@ -140,8 +140,8 @@
                         <p class="muted">Cotação atual: <b id="res_cotacao">N/A</b></p>
                     </div>
                     <div class="actions">
-                        <button class="btn ghost-dark" onclick="saveCurrent()">Salvar na carteira</button>
-                        <button class="btn accent" onclick="exportExcel()">Baixar Excel</button>
+                        <button class="btn ghost-dark" onclick="saveCurrent(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Salvar na carteira</span></button>
+                        <button class="btn accent" onclick="exportExcel(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span>Baixar Excel</span></button>
                     </div>
                 </div>
 
@@ -188,8 +188,8 @@
                         <p class="muted">Cotação atual: <b id="fii_res_cotacao">N/A</b> | VPA: <b id="fii_res_vpa">N/A</b> | P/VP Atual: <b id="fii_res_pvp">N/A</b></p>
                     </div>
                     <div class="actions">
-                        <button class="btn ghost-dark" onclick="saveCurrentFII()">Salvar na carteira</button>
-                        <button class="btn accent" onclick="exportExcelFII()">Baixar Excel</button>
+                        <button class="btn ghost-dark" onclick="saveCurrentFII(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Salvar na carteira</span></button>
+                        <button class="btn accent" onclick="exportExcelFII(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span>Baixar Excel</span></button>
                     </div>
                 </div>
 
@@ -218,16 +218,16 @@
                     <p class="muted">Todas as ações e FIIs salvos/importados. Verde: cotação abaixo do teto.</p>
                 </div>
                 <div class="actions">
-                    <button class="btn accent" onclick="exportPortfolioExcel()">Baixar Excel da carteira</button>
-                    <button class="btn ghost-dark" onclick="exportPortfolioJSON()">Exportar carteira (JSON)</button>
-                    <button class="btn ghost-dark" onclick="clearPortfolio()">Limpar</button>
+                    <button class="btn accent" onclick="exportPortfolioExcel(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span>Baixar Excel da carteira</span></button>
+                    <button class="btn ghost-dark" onclick="exportPortfolioJSON(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5"/></svg><span>Exportar carteira (JSON)</span></button>
+                    <button class="btn ghost-dark" onclick="clearPortfolio()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span>Limpar</span></button>
                 </div>
             </div>
             <div class="card table-card" id="port_body"></div>
         </section>
     </main>
 
-    <dialog id="modal"><div id="mbody"></div><button class="btn primary" onclick="document.getElementById('modal').close()">Fechar</button></dialog>
+    <dialog id="modal"><div id="mbody"></div><button class="btn primary" onclick="document.getElementById('modal').close()"><span>Fechar</span></button></dialog>
     <div id="tip" role="tooltip"></div>
     <div id="toast"></div>
     <script src="script.js"></script>
