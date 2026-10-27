@@ -604,8 +604,9 @@ function buildSheet(wb, name, cols, items, tab) {
     const ws = wb.addWorksheet(name, {
         properties: { tabColor: { argb: tab } },
         // Congela as colunas A (ativo) e B (cotação) e as 2 linhas de cabeçalho
-        views: [{ state: 'frozen', xSplit: 2, ySplit: 2, topLeftCell: 'C3', activeCell: 'C3' }]
+        views: [{ state: 'frozen', xSplit: cols.filter(c => c.g === 'Ativo').length, ySplit: 2 }]
     });
+    const nFrozen = cols.filter(c => c.g === 'Ativo').length;
     cols.forEach((c, i) => { ws.getColumn(i + 1).width = c.w || 16; });
     const thin = { style: 'thin', color: { argb: XL.line } };
     const border = { top: thin, left: thin, bottom: thin, right: thin };
@@ -637,10 +638,10 @@ function buildSheet(wb, name, cols, items, tab) {
         cols.forEach((col, i) => {
             const cell = row.getCell(i + 1), val = cell.value;
             cell.border = border;
-            cell.font = { name: 'Arial', size: 10, bold: i < 2, color: { argb: XL.ink } };
+            cell.font = { name: 'Arial', size: 10, bold: i < nFrozen, color: { argb: XL.ink } };
             cell.alignment = { horizontal: i === 0 ? 'left' : (typeof val === 'string' ? 'center' : 'right'), vertical: 'middle' };
             if (col.f) cell.numFmt = col.f;
-            if (i < 2) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL.frozen } };
+            if (i < nFrozen) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL.frozen } };
             if (col.teto && typeof val === 'number' && item.cot > 0) {   // verde = teto acima da cotação
                 const ok = val >= item.cot;
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ok ? XL.okBg : XL.noBg } };
@@ -678,7 +679,7 @@ function buildLegend(wb) {
 const safeName = s => String(s || 'Ativo').replace(/[^\w\-]+/g, '_');
 
 /* mode 'completo' = todas as colunas; 'precos' = só ativo, cotação e preços-alvo/tetos */
-const pick = (cols, mode) => mode === 'precos' ? cols.filter(c => PRICE_GROUPS.includes(c.g)) : cols;
+const pick = (cols, mode) => mode === 'precos' ? cols.filter(c => PRICE_GROUPS.includes(c.g) && c.h !== 'Cotação atual') : cols;
 const PRICE_GROUPS = ['Ativo', 'Preços-alvo', 'Bazin histórico', 'Bazin projetivo'];
 const suffix = mode => mode === 'precos' ? '_PrecosJustos' : '';
 
