@@ -141,7 +141,8 @@
                     </div>
                     <div class="actions">
                         <button class="btn ghost-dark" onclick="saveCurrent(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Salvar na carteira</span></button>
-                        <button class="btn accent" onclick="exportExcel(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span>Baixar Excel</span></button>
+                        <button class="btn accent" onclick="exportExcel(this, 'completo')"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span>Excel completo</span></button>
+                        <button class="btn ghost-dark" onclick="exportExcel(this, 'precos')"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12l-8 8-9-9V3h8zM7.5 7.5h.01"/></svg><span>Excel só preços justos</span></button>
                     </div>
                 </div>
 
@@ -189,7 +190,8 @@
                     </div>
                     <div class="actions">
                         <button class="btn ghost-dark" onclick="saveCurrentFII(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Salvar na carteira</span></button>
-                        <button class="btn accent" onclick="exportExcelFII(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span>Baixar Excel</span></button>
+                        <button class="btn accent" onclick="exportExcelFII(this, 'completo')"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span>Excel completo</span></button>
+                        <button class="btn ghost-dark" onclick="exportExcelFII(this, 'precos')"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12l-8 8-9-9V3h8zM7.5 7.5h.01"/></svg><span>Excel só preços justos</span></button>
                     </div>
                 </div>
 
@@ -218,7 +220,8 @@
                     <p class="muted">Todas as ações e FIIs salvos/importados. Verde: cotação abaixo do teto.</p>
                 </div>
                 <div class="actions">
-                    <button class="btn accent" onclick="exportPortfolioExcel(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span>Baixar Excel da carteira</span></button>
+                    <button class="btn accent" onclick="exportPortfolioExcel(this, 'completo')"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span>Excel completo</span></button>
+                        <button class="btn ghost-dark" onclick="exportPortfolioExcel(this, 'precos')"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12l-8 8-9-9V3h8zM7.5 7.5h.01"/></svg><span>Excel só preços justos</span></button>
                     <button class="btn ghost-dark" onclick="exportPortfolioJSON(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5"/></svg><span>Exportar carteira (JSON)</span></button>
                     <button class="btn ghost-dark" onclick="clearPortfolio()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span>Limpar</span></button>
                 </div>
