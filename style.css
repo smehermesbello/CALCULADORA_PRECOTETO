@@ -15,18 +15,49 @@ header h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -.01em; }
 .actions { display: flex; gap: .6rem; flex-wrap: wrap; }
 
 .btn {
-    font: 600 .9rem 'Manrope', sans-serif; padding: .6rem 1.1rem; border-radius: 10px; cursor: pointer;
-    border: 1px solid transparent; display: inline-block; transition: background .2s, transform .2s;
+    position: relative; overflow: hidden; isolation: isolate;
+    display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
+    font: 700 .9rem 'Manrope', sans-serif; letter-spacing: .01em; line-height: 1.2;
+    padding: .7rem 1.2rem; border-radius: 12px; cursor: pointer; user-select: none;
+    border: 1px solid transparent; box-shadow: 0 1px 2px rgba(20,33,28,.14);
+    transition: background .2s, border-color .2s, box-shadow .2s, color .2s, transform .12s;
+    -webkit-tap-highlight-color: transparent;
 }
-.btn:hover { transform: translateY(-1px); }
-.btn.ghost { background: transparent; color: #f3f6f1; border-color: #4b5d54; }
-.btn.ghost:hover { background: #22342d; }
+.btn .ico { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(20,33,28,.2); }
+.btn:hover .ico { transform: translateY(-1px) scale(1.1); }
+.btn:active { transform: translateY(1px) scale(.97); box-shadow: inset 0 2px 6px rgba(0,0,0,.25); transition-duration: .05s; }
+
+.btn.ghost { background: rgba(255,255,255,.05); color: #f3f6f1; border-color: #4b5d54; box-shadow: none; }
+.btn.ghost:hover { background: #22342d; border-color: #e3c476; box-shadow: 0 6px 16px rgba(0,0,0,.3); }
 .btn.ghost-dark { background: var(--paper); color: var(--ink); border-color: var(--line); }
-.btn.ghost-dark:hover { background: #fff; border-color: var(--teal); }
-.btn.primary { background: var(--teal); color: #fff; }
-.btn.accent { background: var(--gold); color: #fff; }
+.btn.ghost-dark:hover { background: #fff; border-color: var(--teal); color: var(--teal); }
+.btn.primary { background: linear-gradient(180deg, #11957b, #0b7a64); color: #fff; box-shadow: 0 4px 12px rgba(11,122,100,.35); }
+.btn.primary:hover { background: linear-gradient(180deg, #14a68a, #0d8a72); box-shadow: 0 10px 22px rgba(11,122,100,.42); }
+.btn.accent { background: linear-gradient(180deg, #cb9a38, #b8872b); color: #fff; box-shadow: 0 4px 12px rgba(184,135,43,.35); }
+.btn.accent:hover { background: linear-gradient(180deg, #d6a540, #c2902f); box-shadow: 0 10px 22px rgba(184,135,43,.42); }
 .btn.wide { width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.05rem; }
-.btn:focus-visible, .q:focus-visible, .tab-btn:focus-visible { outline: 3px solid rgba(11,122,100,.4); outline-offset: 2px; }
+.btn.wide:hover .ico { transform: translateX(4px); }
+
+/* Estados de clique: processando e concluído */
+.btn.is-busy { pointer-events: none; opacity: .85; }
+.btn.is-busy .ico, .btn.is-done .ico { display: none; }
+.btn.is-busy::before {
+    content: ''; width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: spin .7s linear infinite;
+}
+.btn.is-done { background: #10a37f !important; border-color: #10a37f !important; color: #fff !important; }
+.btn.is-done::before { content: '✓'; font-weight: 800; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Efeito de onda ao clicar */
+.ripple {
+    position: absolute; border-radius: 50%; background: currentColor; opacity: .28;
+    transform: scale(0); animation: ripple .6s ease-out forwards; pointer-events: none; z-index: -1;
+}
+@keyframes ripple { to { transform: scale(1); opacity: 0; } }
+
+.btn:focus-visible, .q:focus-visible, .tab-btn:focus-visible, .btn-asset:focus-visible, .row-btn:focus-visible { outline: 3px solid rgba(11,122,100,.4); outline-offset: 2px; }
 
 main { max-width: 1200px; margin: 2rem auto; padding: 0 1rem 3rem; }
 
@@ -79,7 +110,9 @@ main { max-width: 1200px; margin: 2rem auto; padding: 0 1rem 3rem; }
 }
 
 .tabs { display: inline-flex; gap: .3rem; padding: .3rem; background: #e0e6dd; border-radius: 12px; margin-bottom: 1.8rem; flex-wrap: wrap; }
-.tab-btn { background: none; border: none; padding: .65rem 1.3rem; font: 600 .95rem 'Manrope', sans-serif; color: var(--muted); border-radius: 9px; cursor: pointer; }
+.tab-btn { position: relative; overflow: hidden; isolation: isolate; background: none; border: none; padding: .65rem 1.3rem; font: 600 .95rem 'Manrope', sans-serif; color: var(--muted); border-radius: 9px; cursor: pointer; transition: background .2s, color .2s, transform .12s; -webkit-tap-highlight-color: transparent; }
+.tab-btn:hover:not(.active) { background: rgba(255,255,255,.6); color: var(--ink); }
+.tab-btn:active { transform: scale(.95); }
 .tab-btn.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(20,33,28,.12); }
 .count { background: var(--teal); color: #fff; border-radius: 99px; font-size: .75rem; padding: 0 .5rem; margin-left: .3rem; }
 
@@ -164,8 +197,6 @@ td { padding: .7rem; border-top: 1px solid var(--line); white-space: nowrap; }
 td.tk { font-weight: 800; text-align: left; }
 td.ok { background: #e3f4ea; color: #0b5d4b; font-weight: 700; }
 td.no { background: #fcebe9; color: #9b2c20; font-weight: 700; }
-td button { background: none; border: none; color: var(--teal); font-weight: 700; cursor: pointer; font-family: inherit; padding: 0 .3rem; }
-td button.del { color: var(--red); }
 .empty { padding: 2.5rem; text-align: center; color: var(--muted); }
 
 #toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: .8rem 1.3rem; border-radius: 12px; opacity: 0; transition: .25s; z-index: 60; pointer-events: none; }
@@ -192,3 +223,24 @@ td button.del { color: var(--red); }
 .pb-tile .sub { font-size: .76rem; }
 .pb-tile.key { border-color: var(--gold); background: #2a3a2c; }
 .pb-tile.key .value { color: #e3c476; }
+
+/* Botões de tipo de ativo: feedback de clique */
+.btn-asset { position: relative; overflow: hidden; isolation: isolate; -webkit-tap-highlight-color: transparent; }
+.btn-asset:active { transform: scale(.98); box-shadow: inset 0 2px 6px rgba(0,0,0,.12); }
+.btn-asset.active::after {
+    content: '✓'; position: absolute; top: .8rem; right: .9rem; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+    background: var(--teal); color: #fff; font: 800 .85rem 'Manrope', sans-serif; display: flex; align-items: center; justify-content: center;
+}
+
+/* Botões da tabela da carteira */
+.row-btn {
+    position: relative; overflow: hidden; isolation: isolate; font: 700 .82rem 'Manrope', sans-serif; padding: .4rem .85rem;
+    border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--teal); cursor: pointer; margin: 0 .15rem;
+    transition: background .2s, color .2s, border-color .2s, transform .12s, box-shadow .2s;
+}
+.row-btn:hover { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: 0 4px 10px rgba(11,122,100,.25); }
+.row-btn.del { color: var(--red); }
+.row-btn.del:hover { background: var(--red); color: #fff; border-color: var(--red); box-shadow: 0 4px 10px rgba(180,56,43,.25); }
+.row-btn:active { transform: scale(.93); }
+
+@media (prefers-reduced-motion: reduce) { .ripple { display: none; } .btn.is-busy::before { animation-duration: 1.4s; } }
