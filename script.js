@@ -677,44 +677,49 @@ function buildLegend(wb) {
 
 const safeName = s => String(s || 'Ativo').replace(/[^\w\-]+/g, '_');
 
-async function exportItems(items, filename) {
+/* mode 'completo' = todas as colunas; 'precos' = só ativo, cotação e preços-alvo/tetos */
+const pick = (cols, mode) => mode === 'precos' ? cols.filter(c => PRICE_GROUPS.includes(c.g)) : cols;
+const PRICE_GROUPS = ['Ativo', 'Preços-alvo', 'Bazin histórico', 'Bazin projetivo'];
+const suffix = mode => mode === 'precos' ? '_PrecosJustos' : '';
+
+async function exportItems(items, filename, mode = 'completo') {
     if (typeof ExcelJS === 'undefined') { toast('A biblioteca do Excel não carregou. Verifique a internet e recarregue a página.'); return false; }
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Valuation & Preço Teto';
     wb.created = new Date();
     const acoes = items.filter(c => c.assetType !== 'fii'), fiis = items.filter(c => c.assetType === 'fii');
-    if (acoes.length) buildSheet(wb, 'Ações', STOCK_COLS, acoes, 'FF0B7A64');
-    if (fiis.length) buildSheet(wb, 'FIIs', FII_COLS, fiis, 'FFB8872B');
+    if (acoes.length) buildSheet(wb, 'Ações', pick(STOCK_COLS, mode), acoes, 'FF0B7A64');
+    if (fiis.length) buildSheet(wb, 'FIIs', pick(FII_COLS, mode), fiis, 'FFB8872B');
     buildLegend(wb);
     const buf = await wb.xlsx.writeBuffer();
     download(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
     return true;
 }
 
-function exportExcel(btn) {
+function exportExcel(btn, mode = 'completo') {
     if (!vData || vData.assetType === 'fii') return toast('Gere os resultados primeiro.');
     return withBusy(btn, async () => {
         const c = compute(readForm());
-        const ok = await exportItems([c], `Valuation_${safeName(c.ticker)}.xlsx`);
+        const ok = await exportItems([c], `Valuation_${safeName(c.ticker)}${suffix(mode)}.xlsx`, mode);
         if (ok) toast(`Excel de ${c.ticker} baixado.`);
         return ok;
     });
 }
 
-function exportExcelFII(btn) {
+function exportExcelFII(btn, mode = 'completo') {
     if (!vData || vData.assetType !== 'fii') return toast('Gere os resultados primeiro.');
     return withBusy(btn, async () => {
         const c = computeFII(readForm());
-        const ok = await exportItems([c], `Valuation_${safeName(c.ticker)}.xlsx`);
+        const ok = await exportItems([c], `Valuation_${safeName(c.ticker)}${suffix(mode)}.xlsx`, mode);
         if (ok) toast(`Excel do FII ${c.ticker} baixado.`);
         return ok;
     });
 }
 
-function exportPortfolioExcel(btn) {
+function exportPortfolioExcel(btn, mode = 'completo') {
     if (!portfolio.length) return toast('A carteira está vazia.');
     return withBusy(btn, async () => {
-        const ok = await exportItems(portfolio.map(p => p.c), 'Valuation_Carteira.xlsx');
+        const ok = await exportItems(portfolio.map(p => p.c), `Valuation_Carteira${suffix(mode)}.xlsx`, mode);
         if (ok) toast(`Carteira baixada (${portfolio.length} ${portfolio.length > 1 ? 'ativos' : 'ativo'}).`);
         return ok;
     });
